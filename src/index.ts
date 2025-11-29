@@ -6,7 +6,7 @@ import { app } from "./app";
 import { catalogRouter, getCatalogs } from "./catalog";
 
 app.use("*", cors());
-app.use(logger());
+app.use(logger((str, ...rest) => console.info(`[${new Date().toISOString()}]`, str, ...rest)));
 
 app.get("/", (c) => {
   c.env;

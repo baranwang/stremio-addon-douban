@@ -16,29 +16,17 @@ export const catalogRouter = new Hono<Env>();
 
 type TmdbSearchResult = z.output<typeof tmdbSearchResultItemSchema>;
 
-/** 从豆瓣获取原始标题 */
-async function fetchDoubanOriginalTitle(doubanId: number): Promise<string | null> {
-  try {
-    const resp = await doubanSubjectDetailCache.fetch(doubanId);
-    return resp?.original_title ?? null;
-  } catch (error) {
-    console.warn(error);
-    return null;
-  }
-}
-
 /** 从候选结果中精确匹配 TMDB ID */
 async function matchTmdbFromCandidates(
   candidates: TmdbSearchResult[],
   item: DoubanSubjectCollectionItem,
+  originalTitle: string | undefined | null,
 ): Promise<number | null> {
-  // 1. 按中文名精确匹配
   const byName = candidates.filter((v) => v.finalName === item.title);
   if (byName.length === 1) return byName[0].id;
 
-  // 2. 如果有多个同名结果，尝试用原始标题匹配
   const toMatch = byName.length > 1 ? byName : candidates;
-  const originalTitle = await fetchDoubanOriginalTitle(item.id);
+
   if (originalTitle) {
     const byOriginal = toMatch.filter((v) => v.finalOriginalName === originalTitle);
     if (byOriginal.length === 1) return byOriginal[0].id;
@@ -52,9 +40,14 @@ async function matchTmdbFromCandidates(
 
 /** 从 TMDB 搜索单个条目的 ID */
 async function searchTmdbId(item: DoubanSubjectCollectionItem): Promise<number | null> {
+  let originalTitle = item.original_title;
+  if (!originalTitle) {
+    const detail = await doubanSubjectDetailCache.fetch(item.id);
+    originalTitle = detail?.original_title;
+  }
   const resp = await tmdbHttp.get(`/search/${item.type}`, {
     params: {
-      query: item.original_title ?? item.title,
+      query: originalTitle || item.title,
       language: "zh-CN",
       year: item.year,
     },
@@ -68,7 +61,7 @@ async function searchTmdbId(item: DoubanSubjectCollectionItem): Promise<number |
   if (data.results.length === 0) return null;
   if (data.results.length === 1) return data.results[0].id;
 
-  return matchTmdbFromCandidates(data.results, item);
+  return matchTmdbFromCandidates(data.results, item, originalTitle);
 }
 
 catalogRouter.get("*", async (c) => {
