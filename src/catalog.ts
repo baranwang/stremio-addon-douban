@@ -3,8 +3,8 @@ import { inArray } from "drizzle-orm";
 import { type Env, Hono } from "hono";
 import { z } from "zod";
 import { doubanMapping, getDrizzle } from "./db";
-import { doubanSubjectCollectionCache, tmdbDetailCache } from "./libs/caches";
-import { http, tmdbHttp } from "./libs/http";
+import { doubanSubjectCollectionCache, doubanSubjectDetailCache } from "./libs/caches";
+import { tmdbHttp } from "./libs/http";
 import { matchResourceRoute } from "./libs/router";
 import {
   type DoubanSubjectCollectionItem,
@@ -19,19 +19,8 @@ type TmdbSearchResult = z.output<typeof tmdbSearchResultItemSchema>;
 /** 从豆瓣获取原始标题 */
 async function fetchDoubanOriginalTitle(doubanId: number): Promise<string | null> {
   try {
-    const resp = await http.post(`https://api.douban.com/v2/movie/subject/${doubanId}`, {
-      apikey: process.env.DOUBAN_API_KEY,
-    });
-    const { success, data, error } = z
-      .object({
-        original_title: z.string().nullable(),
-      })
-      .safeParse(resp.data);
-    if (!success) {
-      console.warn(z.prettifyError(error));
-      return null;
-    }
-    return data.original_title ?? null;
+    const resp = await doubanSubjectDetailCache.fetch(doubanId);
+    return resp?.original_title ?? null;
   } catch (error) {
     console.warn(error);
     return null;
@@ -65,9 +54,9 @@ async function matchTmdbFromCandidates(
 async function searchTmdbId(item: DoubanSubjectCollectionItem): Promise<number | null> {
   const resp = await tmdbHttp.get(`/search/${item.type}`, {
     params: {
-      query: item.title,
+      query: item.original_title ?? item.title,
       language: "zh-CN",
-      year: item.card_subtitle?.split("/")?.[0].trim(),
+      year: item.year,
     },
   });
   const { success, data, error } = tmdbSearchResultSchema.safeParse(resp.data);
@@ -126,25 +115,12 @@ catalogRouter.get("*", async (c) => {
     await db.insert(doubanMapping).values(newMappings);
   }
 
-  // 5. 并行获取所有 TMDB 详情
-  const detailPromises = items.map<Promise<MetaPreview | null>>(async (item) => {
-    const tmdbId = mappingCache.get(item.id);
-    if (!tmdbId) return null;
-    const detail = await tmdbDetailCache.fetch(`${item.type}:${tmdbId}`);
-    if (!detail) return null;
-    return {
-      id: `tmdb:${tmdbId}`,
-      name: detail.finalName ?? detail.finalOriginalName ?? "",
-      description: detail.overview ?? "",
-      type: item.type === "tv" ? "series" : "movie",
-      poster: detail.poster_path,
-      background: detail.backdrop_path,
-    };
-  });
-  const detailResults = await Promise.all(detailPromises);
-
-  // 6. 过滤掉 null 结果，保持原始顺序
-  const metas = detailResults.filter((r): r is MetaPreview => r !== null);
+  const metas = items.map<MetaPreview>((item) => ({
+    id: mappingCache.has(item.id) ? `tmdb:${mappingCache.get(item.id)}` : `douban:${item.id}`,
+    name: item.title,
+    type: item.type === "tv" ? "series" : "movie",
+    poster: item.cover ?? undefined,
+  }));
 
   return c.json({ metas } satisfies WithCache<{ metas: MetaPreview[] }>);
 });
