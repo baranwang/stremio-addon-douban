@@ -5,3 +5,5 @@ export const doubanMapping = sqliteTable("douban_mapping", {
   tmdbId: int("tmdb_id"),
   imdbId: text("imdb_id"),
 });
+
+export type DoubanIdMapping = typeof doubanMapping.$inferSelect;

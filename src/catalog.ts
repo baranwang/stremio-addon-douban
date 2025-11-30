@@ -1,10 +1,19 @@
 import type { ManifestCatalog, MetaPreview, WithCache } from "@stremio-addon/sdk";
-import { and, inArray, isNotNull, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
 import { type Context, type Env, Hono } from "hono";
-import { doubanMapping } from "./db";
+import type { DoubanIdMapping } from "./db";
+import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "./libs/constants";
 import { Douban, douban } from "./libs/douban";
 import { matchResourceRoute } from "./libs/router";
+
+const generateId = (doubanId: number, params?: Omit<DoubanIdMapping, "doubanId">) => {
+  if (params?.imdbId) {
+    return params.imdbId;
+  }
+  if (params?.tmdbId) {
+    return `tmdb:${params.tmdbId}`;
+  }
+  return `douban:${doubanId}`;
+};
 
 export const catalogRouter = new Hono<Env>();
 
@@ -16,69 +25,59 @@ catalogRouter.get("*", async (c) => {
 
   douban.initialize(c.env);
 
+  // 获取豆瓣合集数据
   const collectionData = await douban.getSubjectCollection(params.id, params.extra?.skip);
   if (!collectionData) {
     return c.json({ error: "Not found" }, 404);
   }
+
   const items = collectionData.subject_collection_items;
-  if (!items.length) {
+  if (items.length === 0) {
     return c.json({ metas: [] } satisfies WithCache<{ metas: MetaPreview[] }>);
   }
 
-  // 2. 批量查询数据库中已有的映射
-  const db = drizzle(c.env.stremio_addon_douban);
-  const doubanIds = items.map((item) => item.id);
-  const existingMappings = await db
-    .select({ doubanId: doubanMapping.doubanId, imdbId: doubanMapping.imdbId })
-    .from(doubanMapping)
-    .where(and(inArray(doubanMapping.doubanId, doubanIds), isNotNull(doubanMapping.imdbId)));
-  const mappingCache = new Map(existingMappings.map((m) => [m.doubanId, m.imdbId]));
+  // const doubanIds = items.map((item) => item.id);
+  const dataMap = new Map(items.map((item) => [item.id, item]));
+  const doubanIds = Array.from(dataMap.keys());
+  const { mappingCache, missingIds } = await douban.fetchDoubanIdMapping(doubanIds);
 
-  // 3. 对缺失映射的条目并行搜索 IMDb
-  const missingItems = items.filter((item) => !mappingCache.has(item.id));
-  const searchResults = await Promise.allSettled(
-    missingItems.map(async (item) => {
-      const info = await douban.getSubjectDetailDesc(item.id);
-      return info?.IMDb ?? null;
+  const newMappings = await Promise.all(
+    missingIds.map(async (doubanId) => {
+      const item = dataMap.get(doubanId)!;
+      return douban.findExternalId({
+        doubanId,
+        type: item?.type,
+        originalTitle: item?.original_title ?? undefined,
+        year: item?.year ?? undefined,
+      });
     }),
   );
 
-  // 4. 批量插入新映射到数据库
-  const newMappings: { doubanId: number; imdbId: string }[] = [];
-  for (const [i, item] of missingItems.entries()) {
-    const imdbId = searchResults[i].status === "fulfilled" ? searchResults[i].value : null;
-    if (imdbId) {
-      mappingCache.set(item.id, imdbId);
-      newMappings.push({ doubanId: item.id, imdbId });
-    }
-  }
-  if (newMappings.length > 0) {
-    await db
-      .insert(doubanMapping)
-      .values(newMappings)
-      .onConflictDoUpdate({
-        target: doubanMapping.doubanId,
-        set: { imdbId: sql`excluded.imdb_id` },
-      });
+  // 更新本地缓存
+  for (const item of newMappings) {
+    mappingCache.set(item.doubanId, item);
   }
 
+  // 后台异步写入数据库，不阻塞响应
+  c.executionCtx.waitUntil(douban.persistDoubanIdMapping(newMappings));
+
+  // 构建响应
   const metas = items.map<MetaPreview>((item) => {
-    const imdbId = mappingCache.get(item.id);
     return {
-      id: imdbId ?? `douban:${item.id}`,
+      id: generateId(item.id, mappingCache.get(item.id)),
       name: item.title,
       type: item.type === "tv" ? "series" : "movie",
       poster: item.cover ?? "",
       description: item.description ?? undefined,
-      background: item.photos?.[0] ?? undefined,
+      background: item.photos?.[0],
     };
   });
 
   return c.json({
     metas,
-    cacheMaxAge: 60 * 60 * 24,
-    staleRevalidate: 60 * 60 * 24 * 7,
-    staleError: 60 * 60 * 24 * 7,
+    cacheMaxAge: SECONDS_PER_DAY,
+    staleRevalidate: SECONDS_PER_WEEK,
+    staleError: SECONDS_PER_WEEK,
   } satisfies WithCache<{ metas: MetaPreview[] }>);
 });
 
