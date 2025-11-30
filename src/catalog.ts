@@ -26,7 +26,8 @@ catalogRouter.get("*", async (c) => {
   douban.initialize(c.env);
 
   // 获取豆瓣合集数据
-  const collectionData = await douban.getSubjectCollection(params.id, params.extra?.skip);
+  const skip = params.extra?.skip ?? c.req.query("skip") ?? 0;
+  const collectionData = await douban.getSubjectCollection(params.id, skip);
   if (!collectionData) {
     return c.json({ error: "Not found" }, 404);
   }
