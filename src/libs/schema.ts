@@ -31,8 +31,6 @@ const doubanSubjectCollectionItemSchema = z
     description: v.description || v.comment,
   }));
 
-export type DoubanSubjectCollectionItem = z.output<typeof doubanSubjectCollectionItemSchema>;
-
 export const doubanSubjectCollectionSchema = z.object({
   subject_collection: z
     .object({
@@ -95,55 +93,3 @@ export const doubanSubjectDetailSchema = z.object({
   languages: z.array(z.string()).nullish(),
   pubdate: z.array(z.string()).nullish(),
 });
-
-const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
-
-const tmdbImageSchema = z
-  .string()
-  .nullish()
-  .transform((v) => (v ? `${TMDB_IMAGE_BASE_URL}${v}` : undefined));
-
-export const tmdbSearchResultItemSchema = z.intersection(
-  z.object({
-    id: z.coerce.number(),
-    backdrop_path: tmdbImageSchema,
-    poster_path: tmdbImageSchema,
-    overview: z.string().optional(),
-  }),
-  z
-    .union([
-      z.object({
-        title: z.string().optional(),
-        original_title: z.string().optional(),
-      }),
-      z.object({
-        name: z.string().optional(),
-        original_name: z.string().optional(),
-      }),
-    ])
-    .transform((v) => {
-      return {
-        finalName: (v as { title?: string }).title || (v as { name?: string }).name || "",
-        finalOriginalName:
-          (v as { original_title?: string }).original_title || (v as { original_name?: string }).original_name || "",
-      };
-    }),
-);
-
-export const tmdbSearchResultSchema = z.object({
-  results: z.array(tmdbSearchResultItemSchema),
-  total_results: z.number(),
-});
-
-export const tmdbDetailSchema = z.intersection(
-  tmdbSearchResultItemSchema,
-  z.object({
-    genres: z.array(
-      z.object({
-        id: z.coerce.number(),
-        name: z.string(),
-      }),
-    ),
-    release_date: z.string().optional(),
-  }),
-);

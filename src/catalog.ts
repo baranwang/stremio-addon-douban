@@ -1,8 +1,9 @@
 import type { ManifestCatalog, MetaPreview, WithCache } from "@stremio-addon/sdk";
 import { and, inArray, isNotNull, sql } from "drizzle-orm";
-import { type Env, Hono } from "hono";
-import { doubanMapping, getDrizzle } from "./db";
-import { doubanDetailDescCache, doubanSubjectCollectionCache } from "./libs/caches";
+import { drizzle } from "drizzle-orm/d1";
+import { type Context, type Env, Hono } from "hono";
+import { doubanMapping } from "./db";
+import { Douban, douban } from "./libs/douban";
 import { matchResourceRoute } from "./libs/router";
 
 export const catalogRouter = new Hono<Env>();
@@ -13,44 +14,39 @@ catalogRouter.get("*", async (c) => {
     return c.json({ error: "Not found" }, 404);
   }
 
-  const db = getDrizzle(c.env);
+  douban.initialize(c.env);
 
-  // 1. 获取豆瓣集合数据
-  const data = await doubanSubjectCollectionCache.fetch(`${params.id}:${params.extra?.skip ?? 0}`);
-  if (!data) {
+  const collectionData = await douban.getSubjectCollection(params.id, params.extra?.skip);
+  if (!collectionData) {
     return c.json({ error: "Not found" }, 404);
   }
-  const items = data.subject_collection_items;
-  if (items.length === 0) {
+  const items = collectionData.subject_collection_items;
+  if (!items.length) {
     return c.json({ metas: [] } satisfies WithCache<{ metas: MetaPreview[] }>);
   }
 
   // 2. 批量查询数据库中已有的映射
+  const db = drizzle(c.env.stremio_addon_douban);
   const doubanIds = items.map((item) => item.id);
   const existingMappings = await db
     .select({ doubanId: doubanMapping.doubanId, imdbId: doubanMapping.imdbId })
     .from(doubanMapping)
     .where(and(inArray(doubanMapping.doubanId, doubanIds), isNotNull(doubanMapping.imdbId)));
-
-  console.log(existingMappings);
-
   const mappingCache = new Map(existingMappings.map((m) => [m.doubanId, m.imdbId]));
 
-  // 3. 对缺失映射的条目并行搜索 TMDB
+  // 3. 对缺失映射的条目并行搜索 IMDb
   const missingItems = items.filter((item) => !mappingCache.has(item.id));
-  const searchResults = await Promise.all(
+  const searchResults = await Promise.allSettled(
     missingItems.map(async (item) => {
-      const info = await doubanDetailDescCache.fetch(item.id.toString());
-      if (!info) return null;
-      const imdbId = info.find((v) => v.key === "IMDb")?.value;
-      return imdbId ?? null;
+      const info = await douban.getSubjectDetailDesc(item.id);
+      return info?.IMDb ?? null;
     }),
   );
 
   // 4. 批量插入新映射到数据库
   const newMappings: { doubanId: number; imdbId: string }[] = [];
   for (const [i, item] of missingItems.entries()) {
-    const imdbId = searchResults[i];
+    const imdbId = searchResults[i].status === "fulfilled" ? searchResults[i].value : null;
     if (imdbId) {
       mappingCache.set(item.id, imdbId);
       newMappings.push({ doubanId: item.id, imdbId });
@@ -86,7 +82,9 @@ catalogRouter.get("*", async (c) => {
   } satisfies WithCache<{ metas: MetaPreview[] }>);
 });
 
-export const getCatalogs = async () => {
+export const getCatalogs = async (c: Context<Env>) => {
+  douban.initialize(c.env);
+
   const collectionIds: Array<ManifestCatalog & { total: number | "fetch" }> = [
     { id: "movie_hot_gaia", name: "豆瓣热门电影", type: "movie", total: "fetch" },
     { id: "tv_hot", name: "豆瓣热播剧集", type: "series", total: "fetch" },
@@ -109,14 +107,19 @@ export const getCatalogs = async () => {
         total: catalog.total === "fetch" ? 0 : catalog.total,
       };
       if (catalog.total === "fetch") {
-        const data = await doubanSubjectCollectionCache.fetch(`${catalog.id}:0`);
+        const data = await douban.getSubjectCollection(catalog.id, 0);
         result.total = data?.total ?? 0;
       }
       if (result.total > 10) {
         result.extra ??= [];
         result.extra.push({
           name: "skip",
-          options: Array.from({ length: Math.ceil(result.total / 10) }, (_, i) => (i * 10).toString()),
+          options: Array.from(
+            {
+              length: Math.ceil(result.total / Douban.PAGE_SIZE),
+            },
+            (_, i) => (i * Douban.PAGE_SIZE).toString(),
+          ),
         });
       }
       return result;

@@ -22,7 +22,7 @@ app.get("/", (c) => {
 });
 
 app.get("/manifest.json", async (c) => {
-  const catalogs = await getCatalogs();
+  const catalogs = await getCatalogs(c);
 
   return c.json({
     id: pkg.name,
