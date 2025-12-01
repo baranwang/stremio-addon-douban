@@ -28,10 +28,10 @@ export class Douban {
     this._context = context;
   }
 
-  private http: AxiosInstance;
+  private axios: AxiosInstance;
 
   constructor() {
-    this.http = axios.create({
+    this.axios = axios.create({
       baseURL: "https://frodo.douban.com/api/v2",
       adapter: "fetch",
       headers: {
@@ -41,7 +41,7 @@ export class Douban {
           "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781(0x6700143B) NetType/WIFI MiniProgramEnv/Mac MacWechat/WMPF MacWechat/3.8.7(0x13080712) UnifiedPCMacWechat(0xf264101d) XWEB/16390",
       },
     });
-    this.http.interceptors.request.use(async (config) => {
+    this.axios.interceptors.request.use(async (config) => {
       const finalUri = axios.getUri(config);
       if (finalUri.startsWith("https://frodo.douban.com/")) {
         config.params ||= {};
@@ -52,7 +52,7 @@ export class Douban {
     });
   }
 
-  private async fetch<T>(config: AxiosRequestConfig & { cache?: { key: string; ttl: number } }) {
+  private async request<T>(config: AxiosRequestConfig & { cache?: { key: string; ttl: number } }) {
     const cache = caches.default;
     const cacheKey = new Request(`https://cache.internal/${config.cache?.key}`);
 
@@ -65,9 +65,9 @@ export class Douban {
       console.info("🐢 Cache Miss", config.cache.key);
     }
 
-    const resp = await this.http<T>(config);
+    const resp = await this.axios.request<T>(config);
     if (config.cache) {
-      const response = new Response(JSON.stringify(resp.data as T), {
+      const response = new Response(JSON.stringify(resp.data), {
         headers: {
           "Cache-Control": `public, max-age=${config.cache.ttl / 1000}, s-maxage=${config.cache.ttl / 1000}`,
         },
@@ -87,7 +87,7 @@ export class Douban {
 
   //#region Subject Collection
   async getSubjectCollection(collectionId: string, skip: string | number = 0) {
-    const data = await this.fetch({
+    const data = await this.request({
       url: `/subject_collection/${collectionId}/items`,
       params: {
         start: skip,
@@ -104,7 +104,7 @@ export class Douban {
 
   //#region Subject Detail
   async getSubjectDetail(subjectId: string | number) {
-    const data = await this.fetch({
+    const data = await this.request({
       url: `/subject/${subjectId}`,
       cache: {
         key: `subject_detail:${subjectId}`,
@@ -117,7 +117,7 @@ export class Douban {
 
   //#region Subject Detail Desc
   async getSubjectDetailDesc(subjectId: string | number) {
-    const data = await this.fetch<{ html: string }>({
+    const data = await this.request<{ html: string }>({
       url: `/subject/${subjectId}/desc`,
       cache: {
         key: `subject_detail_desc:${subjectId}`,
@@ -171,7 +171,8 @@ export class Douban {
         year ||= detail.year ?? undefined;
       }
     }
-    const resp = await this.http.get(`https://api.themoviedb.org/3/search/${type}`, {
+    const resp = await this.request({
+      url: `https://api.themoviedb.org/3/search/${type}`,
       headers: {
         Authorization: `Bearer ${this.context.env.TMDB_API_KEY || process.env.TMDB_API_KEY}`,
       },
@@ -181,7 +182,7 @@ export class Douban {
         language: "zh-CN",
       },
     });
-    const { results, total_results } = tmdbSearchResultSchema.parse(resp.data);
+    const { results, total_results } = tmdbSearchResultSchema.parse(resp);
     console.info("🔍 TMDb Search Result", total_results, results);
 
     if (results.length === 0) {
