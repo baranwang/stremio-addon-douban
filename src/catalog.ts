@@ -6,7 +6,7 @@ import { Douban, douban } from "./libs/douban";
 import { matchResourceRoute } from "./libs/router";
 import { isForwardUserAgent } from "./libs/utils";
 
-const generateId = (doubanId: number, params?: Omit<DoubanIdMapping, "doubanId">) => {
+const generateId = (doubanId: number, params?: Partial<Omit<DoubanIdMapping, "doubanId">>) => {
   if (params?.imdbId) {
     return params.imdbId;
   }

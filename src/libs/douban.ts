@@ -1,12 +1,13 @@
+import { type SearchResultResponse, searchResultResponseSchema, Environment as TraktBaseUrl } from "@trakt/api";
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
 import { load as cheerioLoad } from "cheerio";
-import { inArray, sql } from "drizzle-orm";
+import { inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context, Env } from "hono";
 import z from "zod";
 import { type DoubanIdMapping, doubanMapping } from "../db";
 import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from "./constants";
-import { doubanSubjectCollectionSchema, doubanSubjectDetailSchema, tmdbSearchResultSchema } from "./schema";
+import { doubanSubjectCollectionSchema, doubanSubjectDetailSchema } from "./schema";
 
 interface FindTmdbIdParams {
   type: "movie" | "tv";
@@ -14,6 +15,7 @@ interface FindTmdbIdParams {
   originalTitle?: string;
   year?: string;
 }
+
 export class Douban {
   static PAGE_SIZE = 10;
 
@@ -48,6 +50,10 @@ export class Douban {
         config.params ||= {};
         config.params.apiKey = this.context.env.DOUBAN_API_KEY || process.env.DOUBAN_API_KEY;
       }
+      if (finalUri.startsWith(TraktBaseUrl.production)) {
+        config.headers.set("trakt-api-version", "2");
+        config.headers.set("trakt-api-key", this.context.env.TRAKT_CLIENT_ID || process.env.TRAKT_CLIENT_ID);
+      }
       console.info("⬆️", config.method?.toUpperCase(), finalUri);
       return config;
     });
@@ -61,7 +67,7 @@ export class Douban {
       const cachedRes = await cache.match(cacheKey);
       if (cachedRes) {
         console.info("⚡️ Cache Hit", config.cache.key);
-        return cachedRes.json() as Promise<T>;
+        return cachedRes.json() as T;
       }
       console.info("🐢 Cache Miss", config.cache.key);
     }
@@ -88,7 +94,7 @@ export class Douban {
 
   //#region Subject Collection
   async getSubjectCollection(collectionId: string, skip: string | number = 0) {
-    const data = await this.request({
+    const resp = await this.request({
       url: `/subject_collection/${collectionId}/items`,
       params: {
         start: skip,
@@ -99,33 +105,33 @@ export class Douban {
         ttl: 1000 * SECONDS_PER_HOUR * 2,
       },
     });
-    return doubanSubjectCollectionSchema.parse(data);
+    return doubanSubjectCollectionSchema.parse(resp);
   }
   //#endregion
 
   //#region Subject Detail
   async getSubjectDetail(subjectId: string | number) {
-    const data = await this.request({
+    const resp = await this.request({
       url: `/subject/${subjectId}`,
       cache: {
         key: `subject_detail:${subjectId}`,
         ttl: 1000 * SECONDS_PER_DAY,
       },
     });
-    return doubanSubjectDetailSchema.parse(data);
+    return doubanSubjectDetailSchema.parse(resp);
   }
   //#endregion
 
   //#region Subject Detail Desc
   async getSubjectDetailDesc(subjectId: string | number) {
-    const data = await this.request<{ html: string }>({
+    const resp = await this.request<{ html: string }>({
       url: `/subject/${subjectId}/desc`,
       cache: {
         key: `subject_detail_desc:${subjectId}`,
         ttl: 1000 * SECONDS_PER_DAY,
       },
     });
-    const $ = cheerioLoad(data.html);
+    const $ = cheerioLoad(resp.html);
     const info = Array.from($(".subject-desc table").find("tr")).map((el) => {
       const $el = $(el);
       const key = $el.find("td:first-child").text().trim();
@@ -162,68 +168,80 @@ export class Douban {
 
   async fetchDoubanIdMapping(doubanIds: number[]) {
     const rows = await this.db.select().from(doubanMapping).where(inArray(doubanMapping.doubanId, doubanIds));
-    const mappingCache = new Map<number, Omit<DoubanIdMapping, "doubanId">>();
+    const mappingCache = new Map<number, Partial<DoubanIdMapping>>();
     const mappedIds = new Set<number>();
-    for (const { doubanId, imdbId, tmdbId } of rows) {
-      if (imdbId || tmdbId) {
-        mappingCache.set(doubanId, { imdbId, tmdbId });
+    for (const { doubanId, imdbId, tmdbId, traktId } of rows) {
+      if (imdbId || tmdbId || traktId) {
+        mappingCache.set(doubanId, { imdbId, tmdbId, traktId });
         mappedIds.add(doubanId);
       }
     }
+    console.log("mappingCache", mappingCache);
     const missingIds = doubanIds.filter((id) => !mappedIds.has(id));
     return { mappingCache, missingIds };
   }
 
   async persistDoubanIdMapping(mappings: DoubanIdMapping[]) {
-    const data = mappings.filter((item) => item.imdbId || item.tmdbId);
+    const data = mappings.filter((item) => item.imdbId || item.tmdbId || item.traktId);
     if (data.length === 0) return;
+    console.log("🗄️ Updating douban id mapping", data);
     await this.db
       .insert(doubanMapping)
       .values(data)
       .onConflictDoUpdate({
         target: doubanMapping.doubanId,
-        set: { imdbId: sql`excluded.imdb_id`, tmdbId: sql`excluded.tmdb_id` },
+        set: {
+          imdbId: sql`COALESCE(${doubanMapping.imdbId}, excluded.imdb_id)`,
+          tmdbId: sql`COALESCE(${doubanMapping.tmdbId}, excluded.tmdb_id)`,
+          traktId: sql`COALESCE(${doubanMapping.traktId}, excluded.trakt_id)`,
+        },
+        setWhere: or(ne(doubanMapping.calibrated, 1), isNull(doubanMapping.calibrated)),
       });
   }
 
-  private async findTmdbId(params: FindTmdbIdParams) {
-    const { type, doubanId, originalTitle, year: defaultYear } = params;
+  private getTraktSearchField<T extends "ids" | "title" | "original_title">(data: SearchResultResponse, field: T) {
+    if (data.type === "show") {
+      return data.show?.[field];
+    }
+    if (data.type === "movie") {
+      return data.movie?.[field];
+    }
+    return null;
+  }
+
+  private async findIdByTraktSearch(params: FindTmdbIdParams) {
+    const { type, doubanId, originalTitle } = params;
     let query = originalTitle;
-    let year = defaultYear;
+
     if (!query) {
       const detail = await this.getSubjectDetail(doubanId);
       if (detail) {
         query = detail.original_title || detail.title;
-        year ||= detail.year ?? undefined;
       }
     }
-    const resp = await this.request({
-      url: `https://api.themoviedb.org/3/search/${type}`,
-      headers: {
-        Authorization: `Bearer ${this.context.env.TMDB_API_KEY || process.env.TMDB_API_KEY}`,
-      },
-      params: {
-        query,
-        year,
-        language: "zh-CN",
-      },
+    const traktType = type === "tv" ? "show" : "movie";
+    const resp = await this.request<SearchResultResponse[]>({
+      baseURL: TraktBaseUrl.production,
+      url: `/search/${traktType}`,
+      params: { query },
+      cache: { key: `trakt:search:${traktType}:${query}`, ttl: 1000 * SECONDS_PER_HOUR },
     });
-    const { results, total_results } = tmdbSearchResultSchema.parse(resp);
-    console.info("🔍 TMDb Search Result", total_results, results);
-
-    if (results.length === 0) {
+    const data = z.array(searchResultResponseSchema).parse(resp);
+    if (data.length === 0) {
       return null;
     }
-    // 只有一个结果，直接返回
-    if (results.length === 1) {
-      return results[0].id;
+    if (data.length === 1) {
+      return this.getTraktSearchField(data[0], "ids");
     }
+    const nameMatches = data.filter(
+      (result) =>
+        this.getTraktSearchField(result, "title") === query ||
+        this.getTraktSearchField(result, "original_title") === query,
+    );
 
-    const nameMatches = results.filter((result) => result.title === query || result.original_title === query);
     if (nameMatches.length === 1) {
-      return nameMatches[0].id;
+      return this.getTraktSearchField(nameMatches[0], "ids");
     }
-
     return null;
   }
 
@@ -232,8 +250,10 @@ export class Douban {
       doubanId: params.doubanId,
       imdbId: null,
       tmdbId: null,
+      traktId: null,
+      calibrated: 0,
     };
-    // 二者有其一即可，优先使用 IMDb ID
+
     try {
       const detail = await this.getSubjectDetailDesc(params.doubanId);
       if (detail?.IMDb) {
@@ -245,13 +265,15 @@ export class Douban {
     }
     if (!result.imdbId) {
       try {
-        const tmdbId = await this.findTmdbId(params);
-        if (tmdbId) {
-          console.info("🔍 Douban ID => TMDb ID", params.doubanId, tmdbId);
-          result.tmdbId = tmdbId;
+        const resp = await this.findIdByTraktSearch(params);
+        if (resp) {
+          console.info("🔍 Douban ID => External ID", params.doubanId, resp);
+          result.traktId = resp.trakt ?? null;
+          result.tmdbId = resp.tmdb ?? null;
+          result.imdbId = resp.imdb ?? null;
         }
       } catch (error) {
-        console.error("🔍 Douban ID => TMDb ID Error", params.doubanId, error);
+        console.error("🔍 Douban ID => External ID Error", params.doubanId, error);
       }
     }
     console.info("🔍 Douban ID => Result", params.doubanId, result);

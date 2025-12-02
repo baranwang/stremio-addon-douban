@@ -7,13 +7,15 @@ import { app } from "./app";
 import { catalogRouter, getCatalogs } from "./catalog";
 import { idPrefixes, metaRouter } from "./meta";
 
-app.use(
-  "*",
-  cache({
-    cacheName: (c) => c.req.path,
-    cacheControl: "max-age=3600",
-  }),
-);
+if (process.env.NODE_ENV !== "development") {
+  app.use(
+    "*",
+    cache({
+      cacheName: (c) => c.req.path,
+      cacheControl: "max-age=3600",
+    }),
+  );
+}
 app.use("*", cors());
 app.use(logger((...args) => console.info(`[${new Date().toISOString()}]`, ...args)));
 

@@ -1,5 +1,5 @@
 import type { MetaDetail, WithCache } from "@stremio-addon/sdk";
-import { eq } from "drizzle-orm";
+import { eq, type SQL } from "drizzle-orm";
 import { type Env, Hono } from "hono";
 import { doubanMapping } from "./db";
 import { douban } from "./libs/douban";
@@ -26,22 +26,18 @@ metaRouter.get("*", async (c) => {
   let doubanId: string | number | undefined;
   let imdbId: string | undefined | null;
   let tmdbId: string | number | undefined | null;
+  let queryCondition: SQL<unknown> | undefined;
 
   if (metaId.startsWith("douban:")) {
     doubanId = Number.parseInt(metaId.split(":")[1], 10);
+    queryCondition = eq(doubanMapping.doubanId, doubanId);
   } else if (metaId.startsWith("tt")) {
     imdbId = metaId;
+    queryCondition = eq(doubanMapping.imdbId, imdbId);
   } else if (metaId.startsWith("tmdb:")) {
     tmdbId = Number.parseInt(metaId.split(":")[1], 10);
+    queryCondition = eq(doubanMapping.tmdbId, tmdbId);
   }
-
-  const queryCondition = doubanId
-    ? eq(doubanMapping.doubanId, Number.parseInt(doubanId.toString(), 10))
-    : imdbId
-      ? eq(doubanMapping.imdbId, imdbId)
-      : tmdbId
-        ? eq(doubanMapping.tmdbId, Number.parseInt(tmdbId.toString(), 10))
-        : undefined;
 
   if (queryCondition) {
     const [row] = await db.select().from(doubanMapping).where(queryCondition);
