@@ -1,26 +1,35 @@
 import type { ManifestCatalog, MetaPreview, WithCache } from "@stremio-addon/sdk";
 import { type Context, type Env, Hono } from "hono";
-import type { DoubanIdMapping } from "./db";
-import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "./libs/constants";
-import { Douban, douban } from "./libs/douban";
-import { matchResourceRoute } from "./libs/router";
-import { isForwardUserAgent } from "./libs/utils";
 
-const generateId = (doubanId: number, params?: Partial<Omit<DoubanIdMapping, "doubanId">>) => {
-  if (params?.imdbId) {
-    return params.imdbId;
-  }
-  if (params?.tmdbId) {
-    return `tmdb:${params.tmdbId}`;
-  }
-  return `douban:${doubanId}`;
-};
+import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
+import { Douban, douban } from "@/libs/douban";
+import { matchResourceRoute } from "@/libs/router";
+import { isForwardUserAgent } from "@/libs/utils";
+import { generateId } from "./utils";
+
+const collectionConfigs: Array<ManifestCatalog & { total: number | "fetch" }> = [
+  { id: "movie_hot_gaia", name: "豆瓣热门电影", type: "movie", total: "fetch" },
+  { id: "tv_hot", name: "豆瓣热播剧集", type: "series", total: "fetch" },
+  { id: "show_hot", name: "豆瓣热播综艺", type: "series", total: "fetch" },
+  { id: "tv_animation", name: "豆瓣热门动画", type: "series", total: "fetch" },
+  { id: "movie_showing", name: "豆瓣影院热映", type: "movie", total: "fetch" },
+  { id: "movie_real_time_hotest", name: "豆瓣实时热门电影", type: "movie", total: 10 },
+  { id: "tv_real_time_hotest", name: "豆瓣实时热门电视", type: "series", total: 10 },
+  { id: "movie_top250", name: "豆瓣电影 Top250", type: "movie", total: 250 },
+  { id: "movie_weekly_best", name: "豆瓣一周口碑电影榜", type: "movie", total: 10 },
+  { id: "tv_chinese_best_weekly", name: "豆瓣华语口碑剧集榜", type: "series", total: 10 },
+  { id: "tv_global_best_weekly", name: "豆瓣全球口碑剧集榜", type: "series", total: 10 },
+  { id: "show_chinese_best_weekly", name: "豆瓣华语口碑综艺榜", type: "series", total: 10 },
+  { id: "show_global_best_weekly", name: "豆瓣全球口碑综艺榜", type: "series", total: 10 },
+];
+
+const collectionIds = collectionConfigs.map((config) => config.id);
 
 export const catalogRouter = new Hono<Env>();
 
 catalogRouter.get("*", async (c) => {
   const [matched, params] = matchResourceRoute(c.req.path);
-  if (!matched) {
+  if (!matched || !collectionIds.includes(params.id)) {
     return c.json({ error: "Not found" }, 404);
   }
 
@@ -38,7 +47,6 @@ catalogRouter.get("*", async (c) => {
     return c.json({ metas: [] } satisfies WithCache<{ metas: MetaPreview[] }>);
   }
 
-  // const doubanIds = items.map((item) => item.id);
   const dataMap = new Map(items.map((item) => [item.id, item]));
   const doubanIds = Array.from(dataMap.keys());
   const { mappingCache, missingIds } = await douban.fetchDoubanIdMapping(doubanIds);
@@ -98,26 +106,13 @@ catalogRouter.get("*", async (c) => {
   } satisfies WithCache<{ metas: MetaPreview[] }>);
 });
 
+export default catalogRouter;
+
 export const getCatalogs = async (c: Context<Env>) => {
   douban.initialize(c);
 
-  const collectionIds: Array<ManifestCatalog & { total: number | "fetch" }> = [
-    { id: "movie_hot_gaia", name: "豆瓣热门电影", type: "movie", total: "fetch" },
-    { id: "tv_hot", name: "豆瓣热播剧集", type: "series", total: "fetch" },
-    { id: "show_hot", name: "豆瓣热播综艺", type: "series", total: "fetch" },
-    { id: "tv_animation", name: "豆瓣热门动画", type: "series", total: "fetch" },
-    { id: "movie_showing", name: "豆瓣影院热映", type: "movie", total: "fetch" },
-    { id: "movie_real_time_hotest", name: "豆瓣实时热门电影", type: "movie", total: 10 },
-    { id: "tv_real_time_hotest", name: "豆瓣实时热门电视", type: "series", total: 10 },
-    { id: "movie_top250", name: "豆瓣电影 Top250", type: "movie", total: 250 },
-    { id: "movie_weekly_best", name: "豆瓣一周口碑电影榜", type: "movie", total: 10 },
-    { id: "tv_chinese_best_weekly", name: "豆瓣华语口碑剧集榜", type: "series", total: 10 },
-    { id: "tv_global_best_weekly", name: "豆瓣全球口碑剧集榜", type: "series", total: 10 },
-    { id: "show_chinese_best_weekly", name: "豆瓣华语口碑综艺榜", type: "series", total: 10 },
-    { id: "show_global_best_weekly", name: "豆瓣全球口碑综艺榜", type: "series", total: 10 },
-  ];
   const catalogs = await Promise.allSettled(
-    collectionIds.map(async (catalog) => {
+    collectionConfigs.map(async (catalog) => {
       const result: ManifestCatalog & { total: number } = {
         ...catalog,
         total: catalog.total === "fetch" ? 0 : catalog.total,

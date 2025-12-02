@@ -1,10 +1,10 @@
 import type { MetaDetail, WithCache } from "@stremio-addon/sdk";
 import { eq, type SQL } from "drizzle-orm";
 import { type Env, Hono } from "hono";
-import { doubanMapping } from "./db";
-import { douban } from "./libs/douban";
-import { matchResourceRoute } from "./libs/router";
-import { isForwardUserAgent } from "./libs/utils";
+import { doubanMapping } from "../../db";
+import { douban } from "../../libs/douban";
+import { matchResourceRoute } from "../../libs/router";
+import { isForwardUserAgent } from "../../libs/utils";
 
 export const metaRouter = new Hono<Env>();
 
@@ -92,3 +92,5 @@ metaRouter.get("*", async (c) => {
     meta,
   } satisfies WithCache<{ meta: MetaDetail }>);
 });
+
+export default metaRouter;

@@ -1,10 +1,14 @@
 {
   "name": "stremio-addon-douban",
+  "displayName": "Douban",
+  "description": "Douban addon for Stremio",
   "type": "module",
   "version": "0.1.0",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy --minify",
+    "dev": "vite",
+    "build": "vite build --mode client && vite build",
+    "preview": "wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
@@ -14,15 +18,21 @@
     "cheerio": "^1.1.2",
     "drizzle-orm": "^0.44.7",
     "hono": "^4.10.7",
+    "honox": "^0.1.52",
     "path-to-regexp": "^8.3.0",
     "zod": "3.25.76"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.8",
+    "@hono/vite-build": "^1.8.0",
+    "@hono/vite-dev-server": "^0.23.0",
     "@stremio-addon/sdk": "^0.3.0",
+    "@tailwindcss/vite": "^4.1.17",
     "@types/node": "^24.10.1",
     "dotenv": "^17.2.3",
     "drizzle-kit": "^0.31.7",
+    "tailwindcss": "^4.1.17",
+    "vite": "^7.2.6",
     "wrangler": "^4.4.0"
   },
   "pnpm": {

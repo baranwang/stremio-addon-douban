@@ -1,17 +1,21 @@
 {
-  "references": [{ "path": "./tsconfig.islands.json" }],
+  "$schema": "https://json.schemastore.org/tsconfig.json",
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "strict": true,
     "skipLibCheck": true,
-    "lib": ["ESNext"],
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "composite": true,
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
     "paths": {
       "@/*": ["./app/*"]
     }
   },
-  "include": ["app/**/*", "!app/islands/**/*"]
+  "include": ["app/islands/**/*"]
 }
