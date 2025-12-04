@@ -1,4 +1,10 @@
-import { type SearchResultResponse, searchResultResponseSchema, Environment as TraktBaseUrl } from "@trakt/api";
+import {
+  type SearchMovieResultResponse,
+  type SearchResultResponse,
+  type SearchShowResultResponse,
+  searchResultResponseSchema,
+  Environment as TraktBaseUrl,
+} from "@trakt/api";
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
 import { load as cheerioLoad } from "cheerio";
 import { inArray, isNull, ne, or, sql } from "drizzle-orm";
@@ -294,37 +300,34 @@ export class Douban {
       calibrated: 0,
     };
 
-    try {
-      const detail = await this.getSubjectDetailDesc(params.doubanId);
-      if (detail?.IMDb) {
-        console.info("🔍 Douban ID => IMDb ID", params.doubanId, detail.IMDb);
-        result.imdbId = detail.IMDb;
-        try {
-          const traktIds = await this.findIdByImdbId(detail.IMDb);
-          if (traktIds) {
-            result.traktId = traktIds.trakt ?? null;
-            result.tmdbId = traktIds.tmdb ?? null;
-            result.imdbId = traktIds.imdb ?? null;
-          }
-        } catch (error) {}
-      }
-    } catch (error) {
-      console.error("🔍 Douban ID => IMDb ID Error", params.doubanId, error);
+    const assignTraktIds = (
+      ids?:
+        | NonNullable<SearchMovieResultResponse["movie"]>["ids"]
+        | NonNullable<SearchShowResultResponse["show"]>["ids"]
+        | null,
+    ) => {
+      if (!ids) return;
+      result.traktId = ids.trakt ?? null;
+      result.tmdbId = ids.tmdb ?? null;
+      result.imdbId = ids.imdb ?? null;
+    };
+
+    // 1. 尝试从豆瓣详情页获取 IMDb ID
+    const detail = await this.getSubjectDetailDesc(params.doubanId).catch(() => null);
+    if (detail?.IMDb) {
+      result.imdbId = detail.IMDb;
+      // 通过 IMDb ID 查找 Trakt/TMDB ID
+      const traktIds = await this.findIdByImdbId(detail.IMDb).catch(() => null);
+      assignTraktIds(traktIds);
     }
+
+    // 2. 如果没有 IMDb ID，尝试通过 Trakt 搜索标题
     if (!result.imdbId) {
-      try {
-        const resp = await this.findIdByTraktSearch(params);
-        if (resp) {
-          console.info("🔍 Douban ID => External ID", params.doubanId, resp);
-          result.traktId = resp.trakt ?? null;
-          result.tmdbId = resp.tmdb ?? null;
-          result.imdbId = resp.imdb ?? null;
-        }
-      } catch (error) {
-        console.error("🔍 Douban ID => External ID Error", params.doubanId, error);
+      const traktIds = await this.findIdByTraktSearch(params).catch(() => null);
+      if (traktIds) {
+        assignTraktIds(traktIds);
       }
     }
-    console.info("🔍 Douban ID => Result", params.doubanId, result);
     return result;
   }
 }
