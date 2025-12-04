@@ -10,6 +10,7 @@
   "placement": {
     "mode": "smart"
   },
+  "workers_dev": true,
   "routes": [
     {
       "pattern": "stremio-addon-douban.baran.wang",
