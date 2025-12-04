@@ -15,10 +15,14 @@ export default {
       .from(doubanMapping)
       .where(and(isNull(doubanMapping.tmdbId), or(ne(doubanMapping.calibrated, 1), isNull(doubanMapping.calibrated))));
 
+    console.info("🔍 Found", data.length, "items to process");
+
     const groups: (typeof data)[] = [];
     for (let i = 0; i < data.length; i += 10) {
       groups.push(data.slice(i, i + 10));
     }
+
+    let successCount = 0;
 
     for (const group of groups) {
       const results = await Promise.all(
@@ -59,7 +63,9 @@ export default {
       const validResults = results.filter((item): item is DoubanIdMapping => !!item);
       if (validResults.length > 0) {
         ctx.waitUntil(api.persistIdMapping(validResults));
+        successCount += validResults.length;
       }
     }
+    console.info("🎉 Successfully processed", successCount, "items");
   },
 };
