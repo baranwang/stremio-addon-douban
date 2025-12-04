@@ -27,6 +27,10 @@ export class TraktAPI extends BaseAPI {
     this.axios.interceptors.request.use((config) => {
       config.headers.set("trakt-api-version", "2");
       config.headers.set("trakt-api-key", this.context.env.TRAKT_CLIENT_ID || process.env.TRAKT_CLIENT_ID);
+      const userAgent = this.context.req.header("User-Agent");
+      if (userAgent) {
+        config.headers.set("User-Agent", userAgent);
+      }
       return config;
     });
   }
