@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@trakt/api": "npm:@jsr/trakt__api@^0.2.42",
-    "@ts-rest/core": "^3.52.1",
     "axios": "^1.13.2",
     "cheerio": "^1.1.2",
     "drizzle-orm": "^0.44.7",
