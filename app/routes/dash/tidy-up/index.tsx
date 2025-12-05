@@ -10,13 +10,13 @@ export default createRoute(async (c) => {
   const data = await api.db.select().from(doubanMapping).where(isNull(doubanMapping.tmdbId));
 
   return c.render(
-    <div className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-zinc-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+    <div className="min-h-screen bg-linear-to-br from-zinc-50 via-white to-zinc-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text font-bold text-3xl text-transparent tracking-tight">
+              <h1 className="bg-linear-to-r from-emerald-600 to-teal-600 bg-clip-text font-bold text-3xl text-transparent tracking-tight">
                 ID 映射整理
               </h1>
               <p className="mt-2 text-zinc-500 dark:text-zinc-400">以下条目缺少 TMDB ID，需要手动补充</p>

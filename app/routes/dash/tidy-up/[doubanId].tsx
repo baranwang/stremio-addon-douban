@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { basicAuth } from "hono/basic-auth";
 import { createRoute } from "honox/factory";
 import { z } from "zod/v4";
 import { doubanMapping, doubanMappingSchema } from "@/db";
@@ -48,7 +49,7 @@ export const POST = createRoute(async (c) => {
   return c.redirect("/dash/tidy-up");
 });
 
-export default createRoute(async (c) => {
+export default createRoute(basicAuth({ username: "baran", password: "930501" }), async (c) => {
   const doubanId = c.req.param("doubanId");
   if (!doubanId) {
     return c.notFound();
