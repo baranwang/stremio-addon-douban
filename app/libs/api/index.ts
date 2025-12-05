@@ -1,7 +1,7 @@
 import { inArray, isNull, ne, or, sql } from "drizzle-orm";
 import type { ExecutionContext } from "hono";
 import { z } from "zod/v4";
-import { type DoubanIdMapping, doubanMapping, doubanMappingSchema } from "@/db";
+import { type DoubanIdMapping, doubanMapping, doubanMappingInsertSchema } from "@/db";
 import { BaseAPI } from "./base";
 import { DoubanAPI } from "./douban";
 import { ImdbAPI } from "./imdb";
@@ -51,7 +51,7 @@ class API extends BaseAPI {
     const hasValidId = (item: DoubanIdMapping) => !!(item.imdbId || item.tmdbId || item.traktId);
 
     const data = mappings.filter((item): item is DoubanIdMapping => {
-      const result = doubanMappingSchema.safeParse(item);
+      const result = doubanMappingInsertSchema.safeParse(item);
       if (!result.success) {
         console.warn("❌ Invalid douban id mapping", z.prettifyError(result.error));
         return false;
@@ -75,7 +75,7 @@ class API extends BaseAPI {
           tmdbId: sql`COALESCE(excluded.tmdb_id, ${doubanMapping.tmdbId})`,
           traktId: sql`COALESCE(excluded.trakt_id, ${doubanMapping.traktId})`,
         },
-        setWhere: or(ne(doubanMapping.calibrated, 1), isNull(doubanMapping.calibrated)),
+        setWhere: or(ne(doubanMapping.calibrated, true), isNull(doubanMapping.calibrated)),
       });
   }
 
@@ -85,7 +85,6 @@ class API extends BaseAPI {
       imdbId: null,
       tmdbId: null,
       traktId: null,
-      calibrated: 0,
     };
 
     const assignTraktIds = (ids?: Parameters<typeof this.traktAPI.formatIdsToIdMapping>[0]) => {

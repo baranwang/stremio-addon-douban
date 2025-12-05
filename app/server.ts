@@ -14,7 +14,9 @@ export default {
     const data = await api.db
       .select()
       .from(doubanMapping)
-      .where(and(isNull(doubanMapping.tmdbId), or(ne(doubanMapping.calibrated, 1), isNull(doubanMapping.calibrated))));
+      .where(
+        and(isNull(doubanMapping.tmdbId), or(ne(doubanMapping.calibrated, true), isNull(doubanMapping.calibrated))),
+      );
 
     console.info("🔍 Found", data.length, "items to process");
 
@@ -31,7 +33,7 @@ export default {
         return {
           ...mapping,
           doubanId,
-          calibrated: 1,
+          calibrated: true,
         };
       }
       return null;

@@ -94,7 +94,7 @@ export class DoubanAPI extends BaseAPI {
           .onConflictDoUpdate({
             target: doubanMapping.doubanId,
             set: { imdbId },
-            setWhere: or(ne(doubanMapping.calibrated, 1), isNull(doubanMapping.calibrated)),
+            setWhere: or(ne(doubanMapping.calibrated, true), isNull(doubanMapping.calibrated)),
           }),
       );
     } catch (error) {}

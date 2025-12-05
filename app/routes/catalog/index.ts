@@ -69,7 +69,7 @@ catalogRouter.get("*", async (c) => {
 
   // 更新本地缓存
   for (const item of newMappings) {
-    if (item) {
+    if (item?.doubanId) {
       mappingCache.set(item.doubanId, item);
     }
   }
