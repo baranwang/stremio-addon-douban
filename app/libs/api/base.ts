@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type CreateAxiosDefaults } from "axios";
 import { drizzle } from "drizzle-orm/d1";
 import type { ExecutionContext } from "hono";
+import { doubanMapping } from "@/db";
 
 export class BaseAPI {
   private _context?: ExecutionContext;
@@ -117,6 +118,10 @@ export class BaseAPI {
   }
 
   get db() {
-    return drizzle(this.env.STREMIO_ADDON_DOUBAN);
+    return drizzle(this.env.STREMIO_ADDON_DOUBAN, {
+      schema: {
+        doubanMapping,
+      },
+    });
   }
 }

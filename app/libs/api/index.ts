@@ -1,10 +1,11 @@
 import { inArray, isNull, ne, or, sql } from "drizzle-orm";
 import type { ExecutionContext } from "hono";
 import { z } from "zod/v4";
-import { type DoubanIdMapping, doubanMapping, doubanMappingInsertSchema } from "@/db";
+import { type DoubanIdMapping, doubanMapping, doubanMappingSchema } from "@/db";
 import { BaseAPI } from "./base";
 import { DoubanAPI } from "./douban";
 import { ImdbAPI } from "./imdb";
+import { TmdbAPI } from "./tmdb";
 import { TraktAPI } from "./trakt";
 
 interface FindIdParams {
@@ -23,11 +24,14 @@ class API extends BaseAPI {
 
   imdbAPI = new ImdbAPI();
 
+  tmdbAPI = new TmdbAPI();
+
   initialize(env: CloudflareBindings, ctx: ExecutionContext) {
     super.initialize(env, ctx);
     this.doubanAPI.initialize(env, ctx);
     this.traktAPI.initialize(env, ctx);
     this.imdbAPI.initialize(env, ctx);
+    this.tmdbAPI.initialize(env, ctx);
   }
 
   async fetchIdMapping(doubanIds: number[]) {
@@ -51,7 +55,7 @@ class API extends BaseAPI {
     const hasValidId = (item: DoubanIdMapping) => !!(item.imdbId || item.tmdbId || item.traktId);
 
     const data = mappings.filter((item): item is DoubanIdMapping => {
-      const result = doubanMappingInsertSchema.safeParse(item);
+      const result = doubanMappingSchema.safeParse(item);
       if (!result.success) {
         console.warn("❌ Invalid douban id mapping", z.prettifyError(result.error));
         return false;

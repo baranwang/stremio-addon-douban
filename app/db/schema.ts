@@ -1,6 +1,6 @@
 import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { createInsertSchema } from "drizzle-zod";
-import type { z } from "zod/v4";
+
+import { z } from "zod/v4";
 
 export const doubanMapping = sqliteTable("douban_mapping", {
   doubanId: int("douban_id").notNull().primaryKey(),
@@ -15,6 +15,12 @@ export const doubanMapping = sqliteTable("douban_mapping", {
     .$onUpdateFn(() => new Date()),
 });
 
-export const doubanMappingInsertSchema = createInsertSchema(doubanMapping);
+export const doubanMappingSchema = z.object({
+  doubanId: z.coerce.number(),
+  tmdbId: z.coerce.number().nullish(),
+  imdbId: z.string().nullish(),
+  traktId: z.coerce.number().nullish(),
+  calibrated: z.boolean().nullish(),
+});
 
-export type DoubanIdMapping = z.output<typeof doubanMappingInsertSchema>;
+export type DoubanIdMapping = z.output<typeof doubanMappingSchema>;
