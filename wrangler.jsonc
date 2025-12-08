@@ -25,6 +25,10 @@
       "remote": true
     }
   ],
+  "kv_namespaces": [{
+    "binding": "KV",
+    "id": "8274189206e84436bf11f861debd918a"
+  }],
   "ratelimits": [
     {
       "name": "PUBLIC_RATE_LIMIT",
