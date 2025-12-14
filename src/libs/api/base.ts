@@ -40,7 +40,7 @@ export class BaseAPI {
     const cacheConfig = config.cache;
     const requestKey = cacheConfig?.key;
 
-    const cache = await caches.open("cache");
+    const cache = (caches as unknown as { default: Cache }).default;
     const cacheKey = new Request(`https://cache.internal/${requestKey}`);
 
     // 1. 检查持久化缓存
