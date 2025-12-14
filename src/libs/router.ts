@@ -15,14 +15,20 @@ export const parseExtra = (value: string | undefined) => {
   return Object.fromEntries(new URLSearchParams(value));
 };
 
+const RESOURCES = ["catalog", "meta", "stream", "subtitles"] as const;
+
+const RESOURCE_ROUTES = RESOURCES.flatMap((r) => [
+  `/:config/${r}/:type/:id{/:extra}.json`,
+  `/${r}/:type/:id{/:extra}.json`,
+]);
+
 export const matchResourceRoute = (pathname: string) => {
   const [matched, result] = matchRoute<{
-    config: string;
-    resource: string;
+    config?: string;
     type: string;
     id: string;
     extra?: string;
-  }>("/:config/:resource/:type/:id{/:extra}.json", pathname);
+  }>(RESOURCE_ROUTES, pathname);
   if (!matched) return [false, null] as const;
 
   return [
