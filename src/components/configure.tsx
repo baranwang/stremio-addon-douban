@@ -1,5 +1,6 @@
+import { useCallback, useState } from "hono/jsx/dom";
 import { Check, Copy, Film, Tv } from "lucide-react";
-import { Fragment, useCallback, useState } from "react";
+import { type FC, Fragment } from "react";
 import {
   Item,
   ItemActions,
@@ -24,7 +25,7 @@ export interface ConfigureProps {
 const movieConfigs = COLLECTION_CONFIGS.filter((c) => c.type === "movie");
 const seriesConfigs = COLLECTION_CONFIGS.filter((c) => c.type === "series");
 
-export const Configure: React.FC<ConfigureProps> = ({ initialSelectedIds, manifestUrl }) => {
+export const Configure: FC<ConfigureProps> = ({ initialSelectedIds, manifestUrl }) => {
   const [selectedIds, setSelectedIds] = useState<string[]>(initialSelectedIds);
   const [isCopied, setIsCopied] = useState(false);
 
@@ -48,7 +49,6 @@ export const Configure: React.FC<ConfigureProps> = ({ initialSelectedIds, manife
     items.map((item, index, array) => (
       <Fragment key={item.id}>
         <Item size="sm" asChild>
-          {/** biome-ignore lint/a11y/noLabelWithoutControl: Switch control */}
           <label>
             <ItemContent>
               <ItemTitle>{item.name}</ItemTitle>

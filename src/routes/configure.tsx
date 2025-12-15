@@ -1,4 +1,3 @@
-import { reactRenderer } from "@hono/react-renderer";
 import { type Env, Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 import { Github, Heart } from "lucide-react";
@@ -11,26 +10,28 @@ import { ALL_COLLECTION_IDS, DEFAULT_COLLECTION_IDS } from "@/libs/constants";
 
 export const configureRoute = new Hono<Env>();
 
-configureRoute.get(
-  "*",
-  reactRenderer(({ c, children }) => {
+configureRoute.use("*", async (c, next) => {
+  c.setRenderer((children) => {
     const userAgent = c.req.header("User-Agent");
     const isSafari = userAgent?.includes("Safari") && !userAgent?.includes("Chrome");
-    return (
-      <html lang="zh" className={isSafari ? "safari" : ""}>
-        <head>
-          <ViteClient />
-          <Link rel="stylesheet" href="/src/style.css" />
-          <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-          />
-        </head>
-        <body>{children}</body>
-      </html>
+    return c.html(
+      (
+        <html lang="zh" className={isSafari ? "safari" : ""}>
+          <head>
+            <ViteClient />
+            <Link rel="stylesheet" href="/src/style.css" />
+            <meta
+              name="viewport"
+              content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+            />
+          </head>
+          <body>{children}</body>
+        </html>
+      ) as unknown as string,
     );
-  }),
-);
+  });
+  await next();
+});
 
 configureRoute.post("/", async (c) => {
   const formData = await c.req.formData();

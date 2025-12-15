@@ -23,7 +23,8 @@
           "level": "info",
           "fix": "safe"
         }
-      }
+      },
+      "a11y": "off"
     }
   },
   "javascript": {

@@ -1,4 +1,3 @@
-import { reactRenderer } from "@hono/react-renderer";
 import { type Env, Hono } from "hono";
 import { basicAuth } from "hono/basic-auth";
 import { Link, ViteClient } from "vite-ssr-components/react";
@@ -6,25 +5,23 @@ import { tidyUpRoute } from "./tidy-up";
 
 export const dashRoute = new Hono<Env>();
 
-dashRoute.use(
-  "*",
-  reactRenderer(({ children }) => {
-    return (
-      <html lang="zh">
-        <head>
-          <ViteClient />
-          <Link rel="stylesheet" href="/src/style.css" />
-          <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-          />
-          <title>Dashboard - Stremio 豆瓣插件</title>
-        </head>
-        <body>{children}</body>
-      </html>
+dashRoute.use("*", async (c, next) => {
+  c.setRenderer((children) => {
+    return c.html(
+      (
+        <html lang="zh">
+          <head>
+            <ViteClient />
+            <Link rel="stylesheet" href="/src/style.css" />
+            <title>Dashboard - Stremio 豆瓣插件</title>
+          </head>
+          <body>{children}</body>
+        </html>
+      ) as unknown as string,
     );
-  }),
-);
+  });
+  await next();
+});
 
 dashRoute.use(
   basicAuth({

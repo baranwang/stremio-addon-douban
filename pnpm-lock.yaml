@@ -11,9 +11,9 @@ importers:
 
   .:
     dependencies:
-      '@hono/react-renderer':
-        specifier: ^1.0.1
-        version: 1.0.1(hono@4.11.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@hono/react-compat':
+        specifier: ^0.0.3
+        version: 0.0.3(hono@4.11.0)
       '@radix-ui/react-separator':
         specifier: ^1.1.8
         version: 1.1.8(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -53,12 +53,6 @@ importers:
       path-to-regexp:
         specifier: ^8.3.0
         version: 8.3.0
-      react:
-        specifier: ^19.2.3
-        version: 19.2.3
-      react-dom:
-        specifier: ^19.2.3
-        version: 19.2.3(react@19.2.3)
       tailwind-merge:
         specifier: ^3.4.0
         version: 3.4.0
@@ -827,13 +821,10 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@hono/react-renderer@1.0.1':
-    resolution: {integrity: sha512-vjQ/70hVrbgsi2O44N7w5sO0v51lRcuXau/4caVzw0A1hje+U2zAnuhiBC3JhX56gGfhGT4kO5B0di4SROx0Lg==}
-    engines: {node: '>=18'}
+  '@hono/react-compat@0.0.3':
+    resolution: {integrity: sha512-/q1xv6siUJHWeLxJFL+YVR15ylIFe1N3NhrL14a9NH+cV6x53MTQM8g5Xik/J1Xsw4WBLUzKCH+lMENfdhwriA==}
     peerDependencies:
-      hono: '*'
-      react: ^19.0.0
-      react-dom: ^19.0.0
+      hono: '>=4.5.*'
 
   '@img/sharp-darwin-arm64@0.33.5':
     resolution: {integrity: sha512-UT4p+iz/2H4twwAoLCqfA9UH5pI6DggwKEGuaPy7nCVQ8ZsiY5PIcrRvD1DzuY3qYL07NtIQcWnBSY/heikIFQ==}
@@ -3647,11 +3638,9 @@ snapshots:
   '@esbuild/win32-x64@0.27.0':
     optional: true
 
-  '@hono/react-renderer@1.0.1(hono@4.11.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+  '@hono/react-compat@0.0.3(hono@4.11.0)':
     dependencies:
       hono: 4.11.0
-      react: 19.2.3
-      react-dom: 19.2.3(react@19.2.3)
 
   '@img/sharp-darwin-arm64@0.33.5':
     optionalDependencies:

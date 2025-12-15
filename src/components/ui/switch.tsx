@@ -9,7 +9,7 @@ function Switch({ className, onCheckedChange, ...props }: React.ComponentProps<t
       {/* Safari 原生 switch */}
       <input
         type="checkbox"
-        // @ts-expect-error Safari 私有属性
+        // @ts-expect-error
         switch="true"
         className={cn("safari:block hidden accent-primary disabled:cursor-not-allowed disabled:opacity-50", className)}
         {...props}
