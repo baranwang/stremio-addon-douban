@@ -58,42 +58,43 @@ configureRoute.get("/", (c) => {
   };
 
   return c.render(
-    <>
-      <Script src="/src/client/configure.tsx" />
-      <div className="container mx-auto flex h-dvh max-w-lg flex-col">
-        <header className="shrink-0 px-4 py-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-balance font-bold text-xl tracking-tight">{pkg.description}</h1>
-              <p className="text-muted-foreground text-sm">选择要显示的目录，生成你的专属配置</p>
+    (
+      <>
+        <Script src="/src/client/configure.tsx" />
+        <div className="container mx-auto flex h-dvh max-w-lg flex-col">
+          <header className="shrink-0 px-4 py-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h1 className="text-balance font-bold text-xl tracking-tight">{pkg.description}</h1>
+                <p className="text-muted-foreground text-sm">选择要显示的目录，生成你的专属配置</p>
+              </div>
+              <div className="flex items-center max-sm:flex-col max-sm:items-start">
+                <Button variant="ghost" size="sm" asChild>
+                  <a href="https://github.com/baranwang/stremio-addon-douban" target="_blank" rel="noopener noreferrer">
+                    <Github />
+                    <span>GitHub</span>
+                  </a>
+                </Button>
+                <Button variant="ghost" size="sm" asChild>
+                  <a href="https://afdian.com/a/baran" target="_blank" rel="noopener noreferrer">
+                    <Heart />
+                    <span>捐赠</span>
+                  </a>
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center max-sm:flex-col max-sm:items-start">
-              <Button variant="ghost" size="sm" asChild>
-                <a href="https://github.com/baranwang/stremio-addon-douban" target="_blank" rel="noopener noreferrer">
-                  <Github />
-                  <span>GitHub</span>
-                </a>
-              </Button>
-              <Button variant="ghost" size="sm" asChild>
-                <a href="https://afdian.com/a/baran" target="_blank" rel="noopener noreferrer">
-                  <Heart />
-                  <span>捐赠</span>
-                </a>
-              </Button>
-            </div>
-          </div>
-        </header>
+          </header>
 
-        <script
-          id="__INITIAL_DATA__"
-          type="application/json"
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: SSR initial data injection
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(configureProps) }}
-        />
-        <div id="configure" className="flex min-h-0 flex-1 flex-col">
-          <Configure {...configureProps} />
+          <script
+            id="__INITIAL_DATA__"
+            type="application/json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(configureProps) }}
+          />
+          <div id="configure" className="flex min-h-0 flex-1 flex-col">
+            <Configure {...configureProps} />
+          </div>
         </div>
-      </div>
-    </>,
+      </>
+    ) as unknown as string,
   );
 });
