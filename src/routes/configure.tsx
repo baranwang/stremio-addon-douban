@@ -43,7 +43,7 @@ configureRoute.post("/", async (c) => {
 });
 
 configureRoute.get("/", (c) => {
-  const defaultConfig = c.req.param("config") ?? getCookie(c, "config");
+  const defaultConfig = getCookie(c, "config") ?? c.req.param("config");
   const rawConfig = decodeConfig(defaultConfig ?? "");
   const initialSelectedIds = rawConfig.catalogIds || DEFAULT_COLLECTION_IDS;
 
