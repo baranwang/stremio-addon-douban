@@ -24,8 +24,7 @@ manifestRoute.get("/", async (c) => {
     description: pkg.description,
     logo: "https://img1.doubanio.com/f/frodo/144e6fb7d96701944e7dbb1a9bad51bdb1debe29/pics/app/logo.png",
     types: ["movie", "series"],
-    resources: ["catalog", "meta"],
-    idPrefixes: ["douban:", "tmdb:", "tt"],
+    resources: ["catalog"],
     catalogs,
     behaviorHints: {
       configurable: true,

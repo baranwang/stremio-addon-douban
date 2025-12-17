@@ -5,7 +5,7 @@ import { collectionConfigMap, generateId } from "@/libs/catalog";
 import { decodeConfig } from "@/libs/config";
 import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
 import { getExtraFactory, matchResourceRoute } from "@/libs/router";
-import { isForwardUserAgent } from "@/libs/utils";
+import { generateImageUrl, isForwardUserAgent } from "@/libs/utils";
 
 type CatalogResponse = Awaited<ReturnType<Parameters<AddonBuilder["defineCatalogHandler"]>[0]>>;
 
@@ -81,16 +81,11 @@ catalogRoute.get("*", async (c) => {
       id: generateId(item.id, mapping),
       name: item.title,
       type: item.type === "tv" ? "series" : "movie",
-      poster: item.cover ?? "",
+      poster: generateImageUrl(item.cover ?? "", config.imageProxy),
       description: item.description ?? undefined,
       background: item.photos?.[0],
       links: [{ name: `豆瓣评分：${item.rating?.value ?? "N/A"}`, category: "douban", url: item.url ?? "" }],
     };
-    if (config.imageProxy === "weserv" && result.poster) {
-      const url = new URL("https://images.weserv.nl");
-      url.searchParams.set("url", result.poster);
-      result.poster = url.toString();
-    }
     if (imdbId) {
       result.imdb_id = imdbId;
     }
