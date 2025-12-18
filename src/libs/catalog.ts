@@ -6,9 +6,8 @@ import type { Config } from "./config";
 
 export * from "./catalog-shared";
 
-const limit = pLimit(5);
-
 export const getCatalogs = async (config: Config) => {
+  const limit = pLimit(5);
   const catalogsPromises: Promise<ManifestCatalog>[] = [];
 
   const catalogIdsSet = new Set(config.catalogIds || DEFAULT_COLLECTION_IDS);
