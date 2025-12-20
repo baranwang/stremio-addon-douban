@@ -21,7 +21,6 @@ app.use(authMiddleware);
 
 app.get("/", (c) => c.redirect("/configure"));
 
-// 认证路由
 app.route("/auth", authRoute);
 
 app.route("/manifest.json", manifestRoute);

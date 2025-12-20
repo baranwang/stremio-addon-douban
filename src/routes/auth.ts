@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { type Env, Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
-import { users } from "@/db";
+import { getDrizzle, users } from "@/db";
 import { GitHubAPI } from "@/libs/api/github";
 import { createSession, deleteSession } from "@/libs/session";
 
@@ -24,16 +24,6 @@ export const authRoute = new Hono<Env>()
       path: "/",
     });
 
-    // 保存当前页面 URL 用于回调后跳转
-    const returnUrl = c.req.query("return") || "/configure";
-    setCookie(c, "oauth_return", returnUrl, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "Lax",
-      maxAge: 60 * 10,
-      path: "/",
-    });
-
     const github = new GitHubAPI(c.env.GITHUB_CLIENT_ID, c.env.GITHUB_CLIENT_SECRET);
     const authUrl = github.getAuthUrl(state);
     return c.redirect(authUrl);
@@ -46,7 +36,6 @@ export const authRoute = new Hono<Env>()
     const code = c.req.query("code");
     const state = c.req.query("state");
     const savedState = getCookie(c, "oauth_state");
-    const returnUrl = getCookie(c, "oauth_return") || "/configure";
 
     // 验证 state
     if (!state || state !== savedState) {
@@ -69,10 +58,10 @@ export const authRoute = new Hono<Env>()
       // 检查 star 状态
       const hasStarred = await github.checkStarStatus(accessToken);
 
-      const db = drizzle(c.env.STREMIO_ADDON_DOUBAN);
+      const db = getDrizzle(c.env);
 
       // 查找或创建用户
-      let user = await db.select().from(users).where(eq(users.githubId, githubUser.id)).get();
+      let user = await db.query.users.findFirst({ where: eq(users.githubId, githubUser.id) });
 
       if (user) {
         // 更新现有用户
@@ -99,7 +88,7 @@ export const authRoute = new Hono<Env>()
           hasStarred,
           starCheckedAt: new Date(),
         });
-        user = await db.select().from(users).where(eq(users.id, userId)).get();
+        user = await db.query.users.findFirst({ where: eq(users.id, userId) });
       }
 
       if (!user) {
@@ -109,7 +98,7 @@ export const authRoute = new Hono<Env>()
       // 创建 session
       await createSession(c, user.id);
 
-      return c.redirect(returnUrl);
+      return c.redirect(`/${user.id}/configure`);
     } catch (error) {
       console.error("OAuth callback error:", error);
       return c.text("Authentication failed", 500);
@@ -121,8 +110,7 @@ export const authRoute = new Hono<Env>()
    */
   .post("/logout", (c) => {
     deleteSession(c);
-    const returnUrl = c.req.query("return") || "/configure";
-    return c.redirect(returnUrl);
+    return c.redirect("/configure");
   })
 
   /**
