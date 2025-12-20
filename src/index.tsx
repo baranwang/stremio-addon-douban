@@ -3,6 +3,8 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { scheduled } from "./cron";
 import { contextStorage, rateLimit } from "./libs/middleware";
+import { authMiddleware } from "./libs/session";
+import { authRoute } from "./routes/auth";
 import { catalogRoute } from "./routes/catalog";
 import { configureRoute } from "./routes/configure";
 import { dashRoute } from "./routes/dash";
@@ -15,8 +17,12 @@ app.use(logger());
 app.use(cors());
 app.use(rateLimit);
 app.use(contextStorage);
+app.use(authMiddleware);
 
 app.get("/", (c) => c.redirect("/configure"));
+
+// 认证路由
+app.route("/auth", authRoute);
 
 app.route("/manifest.json", manifestRoute);
 app.route("/:config/manifest.json", manifestRoute);

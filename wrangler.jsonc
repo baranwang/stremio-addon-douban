@@ -3,7 +3,9 @@
   "name": "stremio-addon-douban",
   "main": "./src/index.tsx",
   "compatibility_date": "2025-11-28",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "placement": {
     "mode": "smart"
   },
@@ -22,10 +24,15 @@
       "remote": true
     }
   ],
-  "kv_namespaces": [{
-    "binding": "KV",
-    "id": "8274189206e84436bf11f861debd918a"
-  }],
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "8274189206e84436bf11f861debd918a"
+    }
+  ],
+  "vars": {
+    "GITHUB_CLIENT_ID": "Ov23liAcIeCqxTwANWoZ"
+  },
   "ratelimits": [
     {
       "name": "PUBLIC_RATE_LIMIT",
@@ -45,7 +52,9 @@
     // }
   ],
   "triggers": {
-    "crons": ["0 * * * *"]
+    "crons": [
+      "0 * * * *"
+    ]
   },
   "observability": {
     "logs": {

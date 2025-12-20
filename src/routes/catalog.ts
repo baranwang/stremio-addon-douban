@@ -1,7 +1,7 @@
 import type { AddonBuilder, MetaPreview } from "@stremio-addon/sdk";
 import { type Env, Hono } from "hono";
 import { api } from "@/libs/api";
-import { decodeConfig } from "@/libs/config";
+import { getConfig } from "@/libs/config";
 import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
 import { getExtraFactory, matchResourceRoute } from "@/libs/router";
 import { generateImageUrl, isForwardUserAgent } from "@/libs/utils";
@@ -16,7 +16,8 @@ catalogRoute.get("*", async (c) => {
   if (!matched) {
     return c.notFound();
   }
-  const config = decodeConfig(params.config);
+
+  const config = await getConfig(c.env, params.config);
 
   const getExtra = getExtraFactory(c, params.extra);
 

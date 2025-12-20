@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -116,6 +116,10 @@
 
 @utility h-safe-b {
   height: env(safe-area-inset-bottom);
+}
+
+@utility page-container {
+  @apply container mx-auto max-w-3xl;
 }
 
 @layer base {

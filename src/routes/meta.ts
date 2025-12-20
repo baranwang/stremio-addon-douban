@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { type Env, Hono } from "hono";
 import { doubanMapping } from "@/db";
 import { api } from "@/libs/api";
-import { decodeConfig } from "@/libs/config";
+import { getConfig } from "@/libs/config";
 import { matchResourceRoute } from "@/libs/router";
 import { generateImageUrl, isForwardUserAgent } from "@/libs/utils";
 
@@ -29,7 +29,7 @@ metaRoute.get("*", async (c) => {
   if (!doubanId) {
     return c.notFound();
   }
-  const config = decodeConfig(params.config);
+  const config = await getConfig(c.env, params.config);
 
   const data = await api.doubanAPI.getSubjectDetail(doubanId);
   const meta: MetaDetail & { [key: string]: any } = {

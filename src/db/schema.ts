@@ -24,3 +24,35 @@ export const doubanMappingSchema = z.object({
 });
 
 export type DoubanIdMapping = z.output<typeof doubanMappingSchema>;
+
+// 用户表 - 存储 GitHub 登录用户信息
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey(), // 使用 nanoid 生成的短 ID
+  githubId: int("github_id").notNull().unique(),
+  githubLogin: text("github_login").notNull(),
+  githubAvatarUrl: text("github_avatar_url"),
+  githubAccessToken: text("github_access_token"), // 用于检查 star 状态
+  hasStarred: int("has_starred", { mode: "boolean" }).default(false),
+  starCheckedAt: int("star_checked_at", { mode: "timestamp_ms" }),
+  createdAt: int("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()),
+  updatedAt: int("updated_at", { mode: "timestamp_ms" })
+    .$defaultFn(() => new Date())
+    .$onUpdateFn(() => new Date()),
+});
+
+// 用户配置表 - 存储用户的 Stremio 插件配置
+export const userConfigs = sqliteTable("user_configs", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  catalogIds: text("catalog_ids", { mode: "json" }).$type<string[]>().default([]),
+  imageProxy: text("image_proxy").default("none"),
+  dynamicCollections: int("dynamic_collections", { mode: "boolean" }).default(false),
+  createdAt: int("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()),
+  updatedAt: int("updated_at", { mode: "timestamp_ms" })
+    .$defaultFn(() => new Date())
+    .$onUpdateFn(() => new Date()),
+});
+
+export type User = typeof users.$inferSelect;
+export type UserConfig = typeof userConfigs.$inferSelect;
