@@ -94,9 +94,10 @@ catalogRoute.get("*", async (c) => {
         name: item.title,
         type: item.type === "tv" ? "series" : "movie",
         poster: generateImageUrl(item.cover ?? "", config.imageProxy),
-        description: item.description ?? undefined,
+        description: item.description ?? item.card_subtitle ?? undefined,
         background: item.photos?.[0],
-        links: [{ name: `豆瓣评分：${item.rating?.value ?? "N/A"}`, category: "douban", url: item.url ?? "" }],
+        year: item.year,
+        links: [{ name: `豆瓣评分：${item.rating?.value ?? "N/A"}`, category: "douban", url: item.url ?? "#" }],
       };
       if (fanartApi && (tmdbId || imdbId)) {
         let searchId = tmdbId?.toString();
