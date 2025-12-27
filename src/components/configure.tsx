@@ -1,7 +1,7 @@
 import { useForm } from "@tanstack/react-form";
 import { isEqual } from "es-toolkit";
 import { hc } from "hono/client";
-import { Check, Copy, Film, Settings, Tv } from "lucide-react";
+import { Check, Copy, Film, HardDriveDownload, Settings, Tv } from "lucide-react";
 import { type FC, Fragment, useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -30,6 +30,13 @@ import { GenreDrawer } from "./genre-drawer";
 import { SettingSection } from "./setting-section";
 import { Button } from "./ui/button";
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "./ui/input-group";
 import { NativeSelect, NativeSelectOption } from "./ui/native-select";
 import { Spinner } from "./ui/spinner";
@@ -302,45 +309,52 @@ export const Configure: FC<ConfigureProps> = ({ config: initialConfig, manifestU
         </div>
 
         {/* 底部：固定操作区 */}
-        <div className="page-container shrink-0 space-y-3 px-4 pt-4">
-          <div className="space-y-1.5">
-            <label htmlFor="manifest-url" className="text-muted-foreground text-xs">
-              Manifest 链接
-            </label>
-            <InputGroup>
-              <InputGroupInput id="manifest-url" value={manifestUrl} readOnly className="font-mono text-xs" />
-              <InputGroupAddon align="inline-end">
-                <InputGroupButton
-                  size="icon-xs"
-                  onClick={() => copyToClipboard(manifestUrl)}
-                  aria-label="复制链接"
-                  className={isCopied ? "text-green-500" : ""}
-                >
-                  {isCopied ? <Check /> : <Copy />}
-                </InputGroupButton>
-              </InputGroupAddon>
-            </InputGroup>
-          </div>
-
+        <div className="page-container shrink-0 px-4 pt-4">
           <form.Subscribe selector={(state) => [state.values.catalogIds, state.isSubmitting, state.values] as const}>
             {([catalogIds, isSubmitting, values]) => {
               const isNoneSelected = catalogIds.length === 0;
               const hasChanges = !isEqual(values, initialConfig);
 
-              const buttonText = isStarredUser ? "保存配置" : "生成配置链接";
+              const saveButtonText = isStarredUser ? "保存配置" : "生成配置链接";
               const loadingText = isStarredUser ? "保存中..." : "生成中...";
 
               return (
-                <Button type="submit" className="w-full" size="lg" disabled={isNoneSelected || !hasChanges}>
-                  {isSubmitting ? (
-                    <>
-                      <Spinner />
-                      {loadingText}
-                    </>
-                  ) : (
-                    buttonText
-                  )}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="submit"
+                    className="flex-2"
+                    size="lg"
+                    disabled={isNoneSelected || !hasChanges || isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Spinner />
+                        {loadingText}
+                      </>
+                    ) : (
+                      saveButtonText
+                    )}
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="lg" className="flex-1">
+                        安装
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => copyToClipboard(manifestUrl)}>
+                        {isCopied ? <Check className="text-green-500" /> : <Copy />}
+                        {isCopied ? "已复制" : "复制链接"}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <a href={`${manifestUrl.replace(/^https?:\/\//, "stremio://")}`}>
+                          <HardDriveDownload />
+                          导入配置
+                        </a>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               );
             }}
           </form.Subscribe>
