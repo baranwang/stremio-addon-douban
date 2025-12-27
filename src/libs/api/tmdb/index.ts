@@ -1,12 +1,15 @@
 import { SECONDS_PER_WEEK } from "@/libs/constants";
 import { BaseAPI, CacheType } from "../base";
-import { tmdbFindResultSchema, tmdbSearchResultSchema } from "./schema";
+import { tmdbFindResultSchema, tmdbSearchResultSchema, tmdbSubjectImagesSchema } from "./schema";
 
 export class TmdbAPI extends BaseAPI {
-  constructor() {
+  constructor(apiKey?: string) {
     super({ baseURL: "https://api.themoviedb.org/3" });
     this.axios.interceptors.request.use((config) => {
-      config.headers.set("Authorization", `Bearer ${this.context.env.TMDB_API_KEY || process.env.TMDB_API_KEY}`);
+      config.headers.set(
+        "Authorization",
+        `Bearer ${apiKey || this.context.env.TMDB_API_KEY || process.env.TMDB_API_KEY}`,
+      );
       return config;
     });
   }
@@ -54,5 +57,17 @@ export class TmdbAPI extends BaseAPI {
         type: CacheType.LOCAL | CacheType.KV,
       },
     });
+  }
+
+  async getSubjectImages(type: "movie" | "tv", id: number) {
+    const resp = await this.request({
+      url: `/${type}/${id}/images`,
+      cache: {
+        key: `tmdb:${type}:${id}:images`,
+        ttl: SECONDS_PER_WEEK,
+        type: CacheType.LOCAL | CacheType.KV,
+      },
+    });
+    return tmdbSubjectImagesSchema.parse(resp);
   }
 }

@@ -2,6 +2,7 @@ import { and, isNull, ne, or } from "drizzle-orm";
 import type { z } from "zod/v4";
 import { type DoubanIdMapping, doubanMapping } from "@/db";
 import { api, type doubanSubjectDetailSchema } from "@/libs/api";
+import { ImdbAPI } from "./libs/api/imdb";
 import { asyncLocalStorage } from "./libs/middleware";
 
 export const scheduled = async (_controller: ScheduledController, env: CloudflareBindings, ctx: ExecutionContext) => {
@@ -39,6 +40,8 @@ export const scheduled = async (_controller: ScheduledController, env: Cloudflar
         return null;
       };
 
+      const imdbAPI = new ImdbAPI();
+
       for (const group of groups) {
         const results = await Promise.all(
           group.map<Promise<DoubanIdMapping | null>>(async (item) => {
@@ -50,7 +53,7 @@ export const scheduled = async (_controller: ScheduledController, env: Cloudflar
                 // 豆瓣有些剧是用的某一季的 imdb，尝试搜索一下
                 doubanDetail = await api.doubanAPI.getSubjectDetail(doubanId).catch(() => null);
                 if (doubanDetail && doubanDetail.type === "tv") {
-                  const resp = await api.imdbAPI.search(imdbId);
+                  const resp = await imdbAPI.search(imdbId);
                   if (resp.top?.series?.series?.id) {
                     data = await api.traktAPI.searchByImdbId(resp.top.series.series.id).catch(() => []);
                   }

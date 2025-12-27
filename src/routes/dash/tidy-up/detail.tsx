@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { doubanMapping, doubanMappingSchema } from "@/db";
 import { api } from "@/libs/api";
+import { TmdbAPI } from "@/libs/api/tmdb";
 
 export const tidyUpDetailRoute = new Hono<Env>();
 
@@ -58,7 +59,8 @@ tidyUpDetailRoute.get("/:doubanId", async (c) => {
       .then((r) => r[0]),
   ]);
 
-  const tmdbResults = await api.tmdbAPI
+  const tmdbAPI = new TmdbAPI(c.env.TMDB_API_KEY);
+  const tmdbResults = await tmdbAPI
     .search(subject.type, {
       query: subject.original_title || subject.title,
       // year: subject.year ?? undefined,
@@ -80,7 +82,7 @@ tidyUpDetailRoute.get("/:doubanId", async (c) => {
   }
 
   if (idMapping.imdbId) {
-    const resp = await api.tmdbAPI.findById(idMapping.imdbId, "imdb_id");
+    const resp = await tmdbAPI.findById(idMapping.imdbId, "imdb_id");
     if (subject.type === "movie" && resp.movie_results.length > 0) {
       tmdbResults?.results.push(...resp.movie_results);
     }
@@ -101,7 +103,7 @@ tidyUpDetailRoute.get("/:doubanId", async (c) => {
     try {
       tmdbResults.results = await Promise.all(
         tmdbResults.results.map(async (item) => {
-          const resp = await api.tmdbAPI.getExternalId(subject.type, item.id);
+          const resp = await tmdbAPI.getExternalId(subject.type, item.id);
           return {
             ...item,
             imdb_id: resp.imdb_id,

@@ -38,3 +38,15 @@ export const tmdbFindResultSchema = z.object({
   tv_results: z.array(tmdbSearchResultItemSchema).catch([]),
   tv_episode_results: z.array(tmdbSearchResultItemSchema).catch([]),
 });
+
+const tmdbImageDataSchema = z.object({
+  file_path: tmdbImageSchema,
+  vote_average: z.number(),
+  vote_count: z.number(),
+});
+
+export const tmdbSubjectImagesSchema = z.object({
+  backdrops: z.array(tmdbImageDataSchema),
+  posters: z.array(tmdbImageDataSchema),
+  logos: z.array(tmdbImageDataSchema),
+});
