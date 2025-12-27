@@ -74,7 +74,7 @@ export class FanartAPI extends BaseAPI {
         const resp = await this.getMovieImages(id);
         return {
           poster: resp.movieposter?.[0]?.url,
-          background: resp.moviebackground?.[0]?.url,
+          background: resp.moviebackground?.[0]?.url || resp.moviethumb?.[0]?.url,
           logo: resp.hdmovielogo?.[0]?.url || resp.movielogo?.[0]?.url,
         };
       } else {
