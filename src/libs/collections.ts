@@ -9,6 +9,7 @@ export type YearlyRankingItem = IdName & { year: number };
 
 export type CollectionConfig = ManifestCatalog & {
   hasGenre?: boolean;
+  total?: number;
   isDefault?: boolean;
 };
 
@@ -123,11 +124,11 @@ export const TV_GENRE_CONFIGS: IdName[] = [
 export const COLLECTION_CONFIGS: CollectionConfig[] = [
   // 电影榜单
   { id: "movie_hot_gaia", name: "豆瓣热门电影", type: "movie", isDefault: true },
-  { id: "movie_weekly_best", name: "一周口碑电影榜", type: "movie", isDefault: true },
-  { id: "movie_real_time_hotest", name: "实时热门电影", type: "movie", isDefault: true },
-  { id: "movie_top250", name: "豆瓣电影 Top250", type: "movie", isDefault: true },
+  { id: "movie_weekly_best", name: "一周口碑电影榜", type: "movie", isDefault: true, total: 10 },
+  { id: "movie_real_time_hotest", name: "实时热门电影", type: "movie", isDefault: true, total: 10 },
+  { id: "movie_top250", name: "豆瓣电影 Top250", type: "movie", isDefault: true, total: 250 },
   { id: "movie_showing", name: "影院热映", type: "movie", isDefault: true },
-  ...MOVIE_GENRE_CONFIGS.map<CollectionConfig>((item) => ({ ...item, type: "movie", hasGenre: true })),
+  ...MOVIE_GENRE_CONFIGS.map<CollectionConfig>((item) => ({ ...item, type: "movie", hasGenre: true, total: 20 })),
   { id: MOVIE_YEARLY_RANKING_ID, name: "豆瓣年度评分最高电影", type: "movie", hasGenre: true },
 
   // 剧集榜单
@@ -139,12 +140,12 @@ export const COLLECTION_CONFIGS: CollectionConfig[] = [
   { id: "tv_animation", name: "近期热门动画", type: "series", isDefault: true },
   { id: "show_hot", name: "近期热门综艺节目", type: "series", isDefault: true },
   { id: "tv_documentary", name: "近期热门纪录片", type: "series" },
-  { id: "tv_real_time_hotest", name: "实时热门电视", type: "series", isDefault: true },
-  { id: "tv_chinese_best_weekly", name: "华语口碑剧集榜", type: "series", isDefault: true },
-  { id: "tv_global_best_weekly", name: "全球口碑剧集榜", type: "series", isDefault: true },
-  { id: "show_chinese_best_weekly", name: "国内口碑综艺榜", type: "series", isDefault: true },
-  { id: "show_global_best_weekly", name: "国外口碑综艺榜", type: "series", isDefault: true },
-  ...TV_GENRE_CONFIGS.map<CollectionConfig>((item) => ({ ...item, type: "series", hasGenre: true })),
+  { id: "tv_real_time_hotest", name: "实时热门电视", type: "series", isDefault: true, total: 10 },
+  { id: "tv_chinese_best_weekly", name: "华语口碑剧集榜", type: "series", isDefault: true, total: 10 },
+  { id: "tv_global_best_weekly", name: "全球口碑剧集榜", type: "series", isDefault: true, total: 10 },
+  { id: "show_chinese_best_weekly", name: "国内口碑综艺榜", type: "series", isDefault: true, total: 10 },
+  { id: "show_global_best_weekly", name: "国外口碑综艺榜", type: "series", isDefault: true, total: 10 },
+  ...TV_GENRE_CONFIGS.map<CollectionConfig>((item) => ({ ...item, type: "series", hasGenre: true, total: 10 })),
   { id: TV_YEARLY_RANKING_ID, name: "豆瓣年度评分最高剧集", type: "series", hasGenre: true },
 ];
 

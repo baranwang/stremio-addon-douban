@@ -1,6 +1,6 @@
 import type { ManifestCatalog } from "@stremio-addon/sdk";
 import pLimit from "p-limit";
-import { api } from "./api";
+import { api, DoubanAPI } from "./api";
 import {
   COLLECTION_CONFIGS,
   DEFAULT_COLLECTION_IDS,
@@ -67,7 +67,22 @@ export const getCatalogs = async (config: Config) => {
           }
         }
         result.extra ||= [];
-        result.extra.push({ name: "skip" });
+        let total = item.total;
+        if (total === undefined) {
+          total = await api.doubanAPI
+            .getSubjectCollectionItems(collectionId)
+            .then((resp) => resp.total)
+            .catch(() => DoubanAPI.PAGE_SIZE);
+        }
+        if (total > DoubanAPI.PAGE_SIZE) {
+          result.extra.push({
+            name: "skip",
+            options: Array.from({ length: Math.ceil(total / DoubanAPI.PAGE_SIZE) }, (_, i) =>
+              (i * DoubanAPI.PAGE_SIZE).toString(),
+            ),
+            optionsLimit: 1,
+          });
+        }
         if (item.hasGenre) {
           const info = await api.doubanAPI.getSubjectCollectionCategory(collectionId).catch(() => null);
           const categoryItems = info?.items ?? [];
