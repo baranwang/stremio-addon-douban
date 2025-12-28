@@ -1,7 +1,21 @@
+import { forwardRef, useState } from "react";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "../ui/input-group";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "../ui/item";
 import { NativeSelect, NativeSelectOption } from "../ui/native-select";
 import type { ProviderConfigDef } from "./types";
+
+const InputGroupPassword = forwardRef<HTMLInputElement, React.ComponentProps<typeof InputGroupInput>>((props, ref) => {
+  const [isFocus, setIsFocus] = useState(false);
+  return (
+    <InputGroupInput
+      {...props}
+      type={isFocus ? "text" : "password"}
+      onFocus={() => setIsFocus(true)}
+      onBlur={() => setIsFocus(false)}
+      ref={ref}
+    />
+  );
+});
 
 /** 豆瓣配置 */
 export const doubanConfig: ProviderConfigDef<"douban"> = {
@@ -33,34 +47,35 @@ export const fanartConfig: ProviderConfigDef<"fanart"> = {
   id: "fanart",
   name: "Fanart.tv",
   defaultExtra: {},
-  renderConfig: ({ extra, onChange }) => (
-    <Item size="sm">
-      <ItemContent className="flex-1">
-        <ItemTitle>API 密钥（可选）</ItemTitle>
-        <ItemDescription>
-          未提供密钥仅显示 7 天前过审图片，提供后缩短至 48 小时，VIP 为 10 分钟。
-          <a href="https://wiki.fanart.tv/General/personal%20api/" target="_blank" rel="noreferrer">
-            了解更多
-          </a>
-        </ItemDescription>
-        <InputGroup className="mt-2">
-          <InputGroupInput
-            type="password"
-            placeholder="请输入你的 API 密钥"
-            value={extra.apiKey ?? ""}
-            onChange={(e) => onChange({ ...extra, apiKey: e.target.value || undefined })}
-          />
-          <InputGroupAddon align="inline-end">
-            <InputGroupButton asChild>
-              <a href="https://fanart.tv/get-an-api-key/" target="_blank" rel="noreferrer">
-                获取 API 密钥
-              </a>
-            </InputGroupButton>
-          </InputGroupAddon>
-        </InputGroup>
-      </ItemContent>
-    </Item>
-  ),
+  renderConfig: ({ extra, onChange }) => {
+    return (
+      <Item size="sm">
+        <ItemContent className="flex-1">
+          <ItemTitle>API 密钥（可选）</ItemTitle>
+          <ItemDescription>
+            未提供密钥仅显示 7 天前过审图片，提供后缩短至 48 小时，VIP 为 10 分钟。
+            <a href="https://wiki.fanart.tv/General/personal%20api/" target="_blank" rel="noreferrer">
+              了解更多
+            </a>
+          </ItemDescription>
+          <InputGroup className="mt-2">
+            <InputGroupPassword
+              placeholder="请输入你的 API 密钥"
+              value={extra.apiKey ?? ""}
+              onChange={(e) => onChange({ ...extra, apiKey: e.target.value || undefined })}
+            />
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton asChild>
+                <a href="https://fanart.tv/get-an-api-key/" target="_blank" rel="noreferrer">
+                  获取 API 密钥
+                </a>
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
+        </ItemContent>
+      </Item>
+    );
+  },
 };
 
 /** TMDB 配置 */
@@ -79,8 +94,7 @@ export const tmdbConfig: ProviderConfigDef<"tmdb"> = {
           </a>
         </ItemDescription>
         <InputGroup className="mt-2">
-          <InputGroupInput
-            type="password"
+          <InputGroupPassword
             placeholder="请输入你的 API 读访问令牌"
             value={extra.apiKey ?? ""}
             onChange={(e) => onChange({ ...extra, apiKey: e.target.value || undefined })}

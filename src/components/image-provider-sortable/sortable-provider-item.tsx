@@ -1,10 +1,10 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Settings2 } from "lucide-react";
-import { type FC, useState } from "react";
+import { type FC, useCallback, useEffect, useRef, useState } from "react";
 import type { ImageProvider } from "@/libs/config";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "../ui/drawer";
-import { Item, ItemActions, ItemContent, ItemDescription, ItemSeparator, ItemTitle } from "../ui/item";
+import { Item, ItemActions, ItemContent, ItemSeparator, ItemTitle } from "../ui/item";
 import { Switch } from "../ui/switch";
 import type { ProviderConfig } from "./provider-configs";
 
@@ -28,6 +28,31 @@ export const SortableProviderItem: FC<SortableProviderItemProps> = ({
   showSeparator,
 }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // 使用本地状态管理 extra，确保输入框能正确响应
+  const [localExtra, setLocalExtra] = useState<ImageProvider["extra"]>(provider.extra);
+
+  // 使用 ref 来跟踪是否是本地更新，避免循环
+  const isLocalUpdateRef = useRef(false);
+
+  // 当外部 provider.extra 变化且不是本地更新引起的时，同步到本地
+  useEffect(() => {
+    if (!isLocalUpdateRef.current) {
+      setLocalExtra(provider.extra);
+    }
+    isLocalUpdateRef.current = false;
+  }, [provider.extra]);
+
+  // 处理本地 extra 变化
+  const handleLocalExtraChange = useCallback(
+    (newExtra: ImageProvider["extra"]) => {
+      isLocalUpdateRef.current = true;
+      setLocalExtra(newExtra);
+      onExtraChange(newExtra);
+    },
+    [onExtraChange],
+  );
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: config.id,
   });
@@ -58,7 +83,7 @@ export const SortableProviderItem: FC<SortableProviderItemProps> = ({
           <ItemActions>
             {/* 配置按钮 - 只有启用且有配置项时才显示 */}
             {isEnabled && config.renderConfig && (
-              <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+              <Drawer open={drawerOpen} onOpenChange={setDrawerOpen} repositionInputs={false}>
                 <DrawerTrigger asChild>
                   <button type="button" className="p-1 text-muted-foreground hover:text-foreground">
                     <Settings2 className="size-4" />
@@ -70,8 +95,8 @@ export const SortableProviderItem: FC<SortableProviderItemProps> = ({
                   </DrawerHeader>
                   <div className="px-4 pb-6">
                     {config.renderConfig({
-                      extra: provider.extra as never,
-                      onChange: onExtraChange as never,
+                      extra: localExtra as never,
+                      onChange: handleLocalExtraChange as never,
                     })}
                   </div>
                 </DrawerContent>
