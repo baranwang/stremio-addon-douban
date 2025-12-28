@@ -1,0 +1,241 @@
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "prevId": "",
+  "version": "6",
+  "dialect": "sqlite",
+  "tables": {
+    "douban_mapping": {
+      "name": "douban_mapping",
+      "columns": {
+        "douban_id": {
+          "autoincrement": false,
+          "name": "douban_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tmdb_id": {
+          "autoincrement": false,
+          "name": "tmdb_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "imdb_id": {
+          "autoincrement": false,
+          "name": "imdb_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "trakt_id": {
+          "autoincrement": false,
+          "name": "trakt_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calibrated": {
+          "default": false,
+          "autoincrement": false,
+          "name": "calibrated",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "autoincrement": false,
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "autoincrement": false,
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {},
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "users": {
+      "name": "users",
+      "columns": {
+        "id": {
+          "autoincrement": false,
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": false
+        },
+        "github_id": {
+          "autoincrement": false,
+          "name": "github_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "github_login": {
+          "autoincrement": false,
+          "name": "github_login",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "github_avatar_url": {
+          "autoincrement": false,
+          "name": "github_avatar_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "github_access_token": {
+          "autoincrement": false,
+          "name": "github_access_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "has_starred": {
+          "default": 0,
+          "autoincrement": false,
+          "name": "has_starred",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "star_checked_at": {
+          "autoincrement": false,
+          "name": "star_checked_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "autoincrement": false,
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "autoincrement": false,
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {},
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "user_configs": {
+      "name": "user_configs",
+      "columns": {
+        "user_id": {
+          "autoincrement": false,
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": false
+        },
+        "catalog_ids": {
+          "default": "'[]'",
+          "autoincrement": false,
+          "name": "catalog_ids",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "image_proxy": {
+          "default": "'none'",
+          "autoincrement": false,
+          "name": "image_proxy",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dynamic_collections": {
+          "default": 0,
+          "autoincrement": false,
+          "name": "dynamic_collections",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "autoincrement": false,
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "autoincrement": false,
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fanart_enabled": {
+          "default": 0,
+          "autoincrement": false,
+          "name": "fanart_enabled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fanart_api_key": {
+          "autoincrement": false,
+          "name": "fanart_api_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "image_providers": {
+          "default": "'[{\"provider\":\"douban\",\"extra\":{\"proxy\":\"none\"}}]'",
+          "autoincrement": false,
+          "name": "image_providers",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {},
+      "foreignKeys": {
+        "user_configs_user_id_users_id_fk": {
+          "name": "user_configs_user_id_users_id_fk",
+          "tableFrom": "user_configs",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  }
+}

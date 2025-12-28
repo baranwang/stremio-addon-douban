@@ -50,10 +50,6 @@ export const userConfigs = sqliteTable("user_configs", {
   imageProviders: text("image_providers", { mode: "json" })
     .$type<Array<{ provider: string; extra: Record<string, unknown> }>>()
     .default([{ provider: "douban", extra: { proxy: "none" } }]),
-  // 旧字段，待核对后删除
-  imageProxy: text("image_proxy").default("none"),
-  fanartEnabled: int("fanart_enabled", { mode: "boolean" }).default(false),
-  fanartApiKey: text("fanart_api_key"),
   createdAt: int("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()),
   updatedAt: int("updated_at", { mode: "timestamp_ms" })
     .$defaultFn(() => new Date())

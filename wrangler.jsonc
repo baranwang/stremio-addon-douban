@@ -21,7 +21,8 @@
       "binding": "STREMIO_ADDON_DOUBAN",
       "database_name": "stremio-addon-douban",
       "database_id": "543ed1d5-3da8-4ed1-8084-25084af52953",
-      "remote": true
+      "remote": true,
+      "migrations_dir": "drizzle"
     }
   ],
   "kv_namespaces": [
