@@ -41,18 +41,18 @@
       "name": "PUBLIC_RATE_LIMIT",
       "namespace_id": "1001",
       "simple": {
-        "limit": 300,
+        "limit": 60,
         "period": 60
       }
     },
-    // {
-    //   "name": "USER_AGENT_MISSING_RATE_LIMIT",
-    //   "namespace_id": "1002",
-    //   "simple": {
-    //     "limit": 1,
-    //     "period": 60
-    //   }
-    // }
+    {
+      "name": "USER_RATE_LIMIT",
+      "namespace_id": "1002",
+      "simple": {
+        "limit": 300,
+        "period": 60
+      }
+    }
   ],
   "triggers": {
     "crons": [
