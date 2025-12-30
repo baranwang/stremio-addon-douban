@@ -9,7 +9,7 @@ interface SettingSectionProps {
 export const SettingSection: React.FC<SettingSectionProps> = ({ title, icon, footer, extra, children }) => {
   return (
     <section>
-      <div className="sticky top-0 z-10 py-2">
+      <div className="sticky top-0 z-10 bg-background py-2">
         <div className="flex items-center gap-2">
           {icon}
           <span className="font-medium text-sm">{title}</span>
