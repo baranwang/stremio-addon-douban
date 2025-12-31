@@ -60,17 +60,22 @@ export class TmdbAPI extends BaseAPI {
   }
 
   async getSubjectImages(type: "movie" | "tv", id: number) {
-    const resp = await this.request({
-      url: `/${type}/${id}/images`,
-      params: {
-        include_image_language: ["zh", "en", "ja", "ko", "null"].join(","),
-      },
-      cache: {
-        key: `tmdb:${type}:${id}:images`,
-        ttl: SECONDS_PER_WEEK,
-        type: CacheType.LOCAL | CacheType.KV,
-      },
-    });
-    return tmdbSubjectImagesSchema.parse(resp);
+    try {
+      const resp = await this.request({
+        url: `/${type}/${id}/images`,
+        params: {
+          include_image_language: ["zh", "en", "ja", "ko", "null"].join(","),
+        },
+        cache: {
+          key: `tmdb:${type}:${id}:images`,
+          ttl: SECONDS_PER_WEEK,
+          type: CacheType.LOCAL | CacheType.KV,
+        },
+      });
+      return tmdbSubjectImagesSchema.parse(resp);
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
   }
 }
