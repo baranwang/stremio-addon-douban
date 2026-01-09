@@ -117,9 +117,9 @@ catalogRoute.get("*", async (c) => {
           result.tmdbId = tmdbId;
         }
       }
-      if (isInForward) {
-        result.id = generateId({ doubanId: item.id, imdbId, tmdbId });
-      }
+      // if (isInForward) {
+      //   result.id = generateId({ doubanId: item.id, imdbId, tmdbId });
+      // }
       return result;
     }),
   );
