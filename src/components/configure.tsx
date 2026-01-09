@@ -310,7 +310,7 @@ export const Configure: FC<ConfigureProps> = ({ config: initialConfig, manifestU
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild onClick={handleImport}>
                         <a href={manifestUrlConfigs.forward}>
-                          <img className="size-4" src="https://forward.inch.red/_astro/icon.DSrm6bPi_Z1P1wLe.webp" />
+                          <img className="size-4" src="https://forward.inch.red/logo-white.png" />
                           导入 Forward
                         </a>
                       </DropdownMenuItem>

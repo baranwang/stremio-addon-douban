@@ -28,7 +28,7 @@ manifestRoute.get("/", async (c) => {
     version: pkg.version,
     name: pkg.displayName,
     description: pkg.description,
-    logo: "https://img1.doubanio.com/f/frodo/144e6fb7d96701944e7dbb1a9bad51bdb1debe29/pics/app/logo.png",
+    logo: "https://stremio-addon-douban.baran.wang/logo.png",
     types: ["movie", "series"],
     resources,
     catalogs,
