@@ -17,13 +17,17 @@ import {
 export class DoubanAPI extends BaseAPI {
   static PAGE_SIZE = 20;
 
+  static BASE_HEADERS = {
+    Referer: "https://servicewechat.com/wx2f9b06c1de1ccfca/99/page-frame.html",
+    "User-Agent":
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781(0x6700143B) NetType/WIFI MiniProgramEnv/Mac MacWechat/WMPF MacWechat/3.8.7(0x13080712) UnifiedPCMacWechat(0xf264101d) XWEB/16390",
+  };
+
   constructor() {
     super({
       baseURL: "https://frodo.douban.com/api/v2",
       headers: {
-        Referer: "https://servicewechat.com/wx2f9b06c1de1ccfca/99/page-frame.html",
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781(0x6700143B) NetType/WIFI MiniProgramEnv/Mac MacWechat/WMPF MacWechat/3.8.7(0x13080712) UnifiedPCMacWechat(0xf264101d) XWEB/16390",
+        ...DoubanAPI.BASE_HEADERS,
       },
     });
     this.axios.interceptors.request.use(async (config) => {

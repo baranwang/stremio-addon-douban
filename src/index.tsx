@@ -4,11 +4,11 @@ import { logger } from "hono/logger";
 import { scheduled } from "./cron";
 import { contextStorage, rateLimit } from "./libs/middleware";
 import { authMiddleware } from "./libs/session";
-import { apiRoute } from "./routes/api";
 import { authRoute } from "./routes/auth";
 import { catalogRoute } from "./routes/catalog";
 import { configureRoute } from "./routes/configure";
 import { dashRoute } from "./routes/dash";
+import { imageProxyRoute } from "./routes/image-proxy";
 import { manifestRoute } from "./routes/manifest";
 import { metaRoute } from "./routes/meta";
 
@@ -36,7 +36,8 @@ app.route("/:config/catalog", catalogRoute);
 app.route("/meta", metaRoute);
 app.route("/:config/meta", metaRoute);
 
-app.route("/api", apiRoute);
+app.route("/image-proxy", imageProxyRoute);
+
 app.route("/dash", dashRoute);
 
 export default {

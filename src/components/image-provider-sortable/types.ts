@@ -11,7 +11,8 @@ export interface ProviderConfigRenderProps<T extends ImageProvider["provider"]> 
 export interface ProviderConfigDef<T extends ImageProvider["provider"] = ImageProvider["provider"]> {
   id: T;
   name: string;
-  defaultExtra: ImageProvider<T>["extra"];
+  /** 默认 extra 配置，可以是对象或返回对象的函数（用于需要访问 window 等浏览器 API 的场景） */
+  defaultExtra: ImageProvider<T>["extra"] | (() => ImageProvider<T>["extra"]);
   renderConfig?: (props: ProviderConfigRenderProps<T>) => ReactNode;
 }
 

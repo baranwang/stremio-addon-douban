@@ -1,3 +1,4 @@
+import { Liquid } from "liquidjs";
 import type { DoubanSubjectCollectionItem } from "./api";
 import { FanartAPI } from "./api/fanart";
 import { TmdbAPI } from "./api/tmdb";
@@ -17,11 +18,20 @@ interface GenerateOptions {
   imdbId?: string | null;
 }
 
+interface ConstructorOptions {
+  origin: string;
+  userId?: string;
+}
+
 export class ImageUrlGenerator {
   private fanartAPI?: FanartAPI;
   private tmdbAPI?: TmdbAPI;
+  private liquid = new Liquid();
 
-  constructor(private providers: ImageProvider[]) {}
+  constructor(
+    private providers: ImageProvider[],
+    private options: ConstructorOptions,
+  ) {}
 
   async generate(options: GenerateOptions): Promise<ImageUrls> {
     const result: ImageUrls = {
@@ -71,21 +81,22 @@ export class ImageUrlGenerator {
   // Douban
   private getDoubanUrls(info: DoubanInfo, extra: ImageProvider<"douban">["extra"]): ImageUrls {
     return {
-      poster: this.applyProxy(info.cover, extra.proxy),
-      background: this.applyProxy(info.photos?.[0], extra.proxy),
+      poster: this.applyProxy(info.cover, extra.proxyTemplate),
+      background: this.applyProxy(info.photos?.[0], extra.proxyTemplate),
       logo: undefined,
     };
   }
 
   private applyProxy(
     url: string | null | undefined,
-    proxy: ImageProvider<"douban">["extra"]["proxy"],
+    proxyTemplate: ImageProvider<"douban">["extra"]["proxyTemplate"],
   ): string | undefined {
     if (!url) return undefined;
-    if (proxy === "weserv") {
-      const proxyUrl = new URL("https://images.weserv.nl");
-      proxyUrl.searchParams.set("url", url);
-      return proxyUrl.toString();
+    if (proxyTemplate) {
+      return this.liquid.parseAndRenderSync(proxyTemplate, {
+        url,
+        userId: this.options.userId,
+      });
     }
     return url;
   }

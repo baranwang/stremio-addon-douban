@@ -8,7 +8,7 @@ import { DEFAULT_COLLECTION_IDS } from "./collections";
 const imageProviderDoubanSchema = z.object({
   provider: z.literal("douban"),
   extra: z.object({
-    proxy: z.enum(["none", "weserv"]).default("none").catch("none"),
+    proxyTemplate: z.string().optional(),
   }),
 });
 
@@ -37,7 +37,7 @@ export type ImageProvider<T extends ImageProviderBase["provider"] = ImageProvide
 export const configSchema = z.object({
   catalogIds: z.array(z.string()).default(DEFAULT_COLLECTION_IDS),
   dynamicCollections: z.boolean().default(false).catch(false),
-  imageProviders: imageProviderSchema.array().default([{ provider: "douban", extra: { proxy: "none" } }]),
+  imageProviders: imageProviderSchema.array().default([{ provider: "douban", extra: {} }]),
 });
 
 export type Config = z.infer<typeof configSchema>;

@@ -1,7 +1,7 @@
 import { useForm } from "@tanstack/react-form";
 import { isEqual } from "es-toolkit";
 import { hc } from "hono/client";
-import { Copy, Film, HardDriveDownload, Image, Settings, Tv } from "lucide-react";
+import { Copy, Film, Image, Settings, Tv } from "lucide-react";
 import { type FC, Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -26,13 +26,14 @@ import {
 } from "@/libs/collections";
 import type { Config } from "@/libs/config";
 import type { ConfigureRoute } from "@/routes/configure";
-import { GenreDrawer } from "./genre-drawer";
-import { ImageProviderSortable } from "./image-provider-sortable";
-import { SettingSection } from "./setting-section";
-import { Button } from "./ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import { Spinner } from "./ui/spinner";
-import { YearlyRankingDrawer } from "./yearly-ranking-drawer";
+import { GenreDrawer } from "../genre-drawer";
+import { ImageProviderSortable } from "../image-provider-sortable";
+import { SettingSection } from "../setting-section";
+import { Button } from "../ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import { Spinner } from "../ui/spinner";
+import { YearlyRankingDrawer } from "../yearly-ranking-drawer";
+import { ConfigureContext } from "./context";
 
 export interface ConfigureProps {
   config: Config;
@@ -133,7 +134,7 @@ export const Configure: FC<ConfigureProps> = ({ config: initialConfig, manifestU
   }, [manifestUrl]);
 
   return (
-    <>
+    <ConfigureContext.Provider value={{ isStarredUser }}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -323,6 +324,6 @@ export const Configure: FC<ConfigureProps> = ({ config: initialConfig, manifestU
         </div>
       </form>
       <Toaster />
-    </>
+    </ConfigureContext.Provider>
   );
 };

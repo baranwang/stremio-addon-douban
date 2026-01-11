@@ -80,7 +80,10 @@ metaRoute.get("*", async (c) => {
   }
 
   const config = await getConfig(c.env, params.config);
-  const imageUrlGenerator = new ImageUrlGenerator(config.imageProviders);
+  const imageUrlGenerator = new ImageUrlGenerator(config.imageProviders, {
+    origin: new URL(c.req.url).origin,
+    userId: params.config,
+  });
   const images = await imageUrlGenerator.generate({
     doubanInfo: {
       cover: data.cover_url || data.pic?.large || data.pic?.normal || "",

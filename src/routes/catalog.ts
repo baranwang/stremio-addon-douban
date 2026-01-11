@@ -82,7 +82,10 @@ catalogRoute.get("*", async (c) => {
 
   const isInForward = isForwardUserAgent(c);
 
-  const imageUrlGenerator = new ImageUrlGenerator(config.imageProviders);
+  const imageUrlGenerator = new ImageUrlGenerator(config.imageProviders, {
+    origin: new URL(c.req.url).origin,
+    userId: params.config,
+  });
 
   // 构建响应
   const metas = await Promise.all(

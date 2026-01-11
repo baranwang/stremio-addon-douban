@@ -1,7 +1,7 @@
-import { forwardRef, useState } from "react";
+import { forwardRef, use, useState } from "react";
+import { ConfigureContext } from "../configure/context";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "../ui/input-group";
-import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "../ui/item";
-import { NativeSelect, NativeSelectOption } from "../ui/native-select";
+import { Item, ItemContent, ItemDescription, ItemTitle } from "../ui/item";
 import type { ProviderConfigDef } from "./types";
 
 const InputGroupPassword = forwardRef<HTMLInputElement, React.ComponentProps<typeof InputGroupInput>>((props, ref) => {
@@ -21,25 +21,45 @@ const InputGroupPassword = forwardRef<HTMLInputElement, React.ComponentProps<typ
 export const doubanConfig: ProviderConfigDef<"douban"> = {
   id: "douban",
   name: "豆瓣",
-  defaultExtra: { proxy: "none" },
-  renderConfig: ({ extra, onChange }) => (
-    <Item size="sm">
-      <ItemContent>
-        <ItemTitle>图片代理</ItemTitle>
-        <ItemDescription>针对 Stremio 用户优化，Forward 等客户端用户不建议开启</ItemDescription>
-      </ItemContent>
-      <ItemActions>
-        <NativeSelect
-          value={extra.proxy}
-          size="sm"
-          onChange={(e) => onChange({ ...extra, proxy: e.target.value as "none" | "weserv" })}
-        >
-          <NativeSelectOption value="none">不使用代理</NativeSelectOption>
-          <NativeSelectOption value="weserv">Weserv</NativeSelectOption>
-        </NativeSelect>
-      </ItemActions>
-    </Item>
-  ),
+  defaultExtra: () => ({
+    proxyTemplate: `${window.location.origin}/image-proxy/{{userId}}?url={{url | url_encode}}`,
+  }),
+  renderConfig: ({ extra, onChange }) => {
+    const { isStarredUser } = use(ConfigureContext);
+    return (
+      <Item size="sm">
+        <ItemContent className="flex-1">
+          <ItemTitle>图片代理模板</ItemTitle>
+          <InputGroup className="mt-2">
+            <InputGroupInput
+              placeholder={`例如：https://stremio-addon-douban.baran.wang/image-proxy/{{userId}}?url={{url | url_encode}}`}
+              value={isStarredUser ? (extra.proxyTemplate ?? "") : ""}
+              disabled={!isStarredUser}
+              onChange={(e) => onChange({ ...extra, proxyTemplate: e.target.value || undefined })}
+            />
+          </InputGroup>
+          <ItemDescription className="line-clamp-none">
+            使用{" "}
+            <a href="https://liquidjs.com/zh-cn/" target="_blank" rel="noreferrer">
+              Liquid
+            </a>{" "}
+            模板语法配置代理 URL。
+            <br />
+            可用变量：
+            <ul>
+              <li>
+                <code>{"{{url}}"}</code>：图片 URL
+              </li>
+              <li>
+                <code>{"{{userId}}"}</code>：用户 ID
+              </li>
+            </ul>
+            支持过滤器如 <code>{"{{url | url_encode}}"}</code>。留空则不使用代理。
+          </ItemDescription>
+        </ItemContent>
+      </Item>
+    );
+  },
 };
 
 /** Fanart 配置 */
