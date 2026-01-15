@@ -50,3 +50,35 @@ export const tmdbSubjectImagesSchema = z.object({
   posters: z.array(tmdbImageDataSchema),
   logos: z.array(tmdbImageDataSchema),
 });
+
+const tmdbGenreSchema = z.object({
+  id: z.number().int().optional(),
+  name: z.string(),
+});
+
+const tmdbMovieDetailSchema = z.object({
+  id: z.number().int(),
+  title: z.string().nullish(),
+  original_title: z.string().nullish(),
+  overview: z.string().nullish(),
+  genres: z.array(tmdbGenreSchema).nullish(),
+  release_date: z.string().nullish(),
+});
+
+const tmdbTvDetailSchema = z.object({
+  id: z.number().int(),
+  name: z.string().nullish(),
+  original_name: z.string().nullish(),
+  overview: z.string().nullish(),
+  genres: z.array(tmdbGenreSchema).nullish(),
+  first_air_date: z.string().nullish(),
+});
+
+export const tmdbSubjectDetailSchema = z.union([tmdbMovieDetailSchema, tmdbTvDetailSchema]).transform((value) => ({
+  id: value.id,
+  title: "title" in value ? value.title : value.name,
+  original_title: "original_title" in value ? value.original_title : value.original_name,
+  overview: value.overview,
+  genres: value.genres ?? [],
+  release_date: "release_date" in value ? value.release_date : value.first_air_date,
+}));

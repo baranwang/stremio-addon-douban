@@ -1,6 +1,6 @@
 import { SECONDS_PER_WEEK } from "@/libs/constants";
 import { BaseAPI, CacheType } from "../base";
-import { tmdbFindResultSchema, tmdbSearchResultSchema, tmdbSubjectImagesSchema } from "./schema";
+import { tmdbFindResultSchema, tmdbSearchResultSchema, tmdbSubjectDetailSchema, tmdbSubjectImagesSchema } from "./schema";
 
 export class TmdbAPI extends BaseAPI {
   constructor(apiKey?: string) {
@@ -72,5 +72,21 @@ export class TmdbAPI extends BaseAPI {
       },
     });
     return tmdbSubjectImagesSchema.parse(resp);
+  }
+
+  async getSubjectDetail(type: "movie" | "tv", id: number, options?: { language?: string }) {
+    const language = options?.language ?? "en-US";
+    const resp = await this.request({
+      url: `/${type}/${id}`,
+      params: {
+        language,
+      },
+      cache: {
+        key: `tmdb:${type}:${id}:detail:${language}`,
+        ttl: SECONDS_PER_WEEK,
+        type: CacheType.LOCAL | CacheType.KV,
+      },
+    });
+    return tmdbSubjectDetailSchema.parse(resp);
   }
 }

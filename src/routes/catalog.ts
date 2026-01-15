@@ -6,11 +6,17 @@ import { getConfig } from "@/libs/config";
 import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
 import { ImageUrlGenerator } from "@/libs/images";
 import { getExtraFactory, matchResourceRoute } from "@/libs/router";
-import { generateId, isForwardUserAgent } from "@/libs/utils";
+import { generateId, getPreferredTitle, isForwardUserAgent } from "@/libs/utils";
 
 type CatalogResponse = Awaited<ReturnType<Parameters<AddonBuilder["defineCatalogHandler"]>[0]>>;
 
 export const catalogRoute = new Hono<Env>();
+
+const getYearFromDate = (value?: string | null) => {
+  if (!value) return undefined;
+  const match = value.match(/^\d{4}/);
+  return match ? match[0] : undefined;
+};
 
 catalogRoute.get("*", async (c) => {
   const [matched, params] = matchResourceRoute(c.req.path);
@@ -65,7 +71,7 @@ catalogRoute.get("*", async (c) => {
       return api.findExternalId({
         doubanId,
         type: item.type,
-        title: item.title,
+        title: getPreferredTitle(item.title, item.original_title),
       });
     }),
   );
@@ -87,12 +93,28 @@ catalogRoute.get("*", async (c) => {
     userId: params.config,
   });
 
+  const tmdbDetailCache = new Map<number, Awaited<ReturnType<typeof api.tmdbAPI.getSubjectDetail>> | null>();
+  const getTmdbDetail = async (type: "movie" | "tv", tmdbId?: number | null) => {
+    if (!tmdbId) return null;
+    if (tmdbDetailCache.has(tmdbId)) {
+      return tmdbDetailCache.get(tmdbId) ?? null;
+    }
+    const detail = await api.tmdbAPI.getSubjectDetail(type, tmdbId, { language: "en-US" }).catch(() => null);
+    tmdbDetailCache.set(tmdbId, detail);
+    return detail;
+  };
+
   // 构建响应
   const metas = await Promise.all(
     items.map(async (item) => {
       const mapping = mappingCache.get(item.id);
       const { imdbId, tmdbId } = mapping ?? {};
       const [, , genres] = item.card_subtitle?.split("/") ?? [];
+      const tmdbDetail = await getTmdbDetail(item.type, tmdbId);
+      const englishTitle = tmdbDetail?.title?.trim() || tmdbDetail?.original_title?.trim();
+      const englishOverview = tmdbDetail?.overview?.trim();
+      const englishGenres = tmdbDetail?.genres?.map((genre) => genre.name).filter(Boolean);
+      const englishYear = getYearFromDate(tmdbDetail?.release_date);
       const images = await imageUrlGenerator.generate({
         doubanInfo: item,
         tmdbId,
@@ -101,13 +123,13 @@ catalogRoute.get("*", async (c) => {
       const result: MetaDetail & { [key: string]: any } = {
         id: `douban:${item.id}`,
         type: item.type === "tv" ? "series" : "movie",
-        name: item.title,
-        description: item.description ?? item.card_subtitle ?? undefined,
+        name: englishTitle ?? getPreferredTitle(item.title, item.original_title),
+        description: englishOverview ?? item.description ?? item.card_subtitle ?? undefined,
         poster: images.poster,
         background: images.background,
         logo: images.logo,
-        year: item.year,
-        genres: genres?.trim().split(" ") ?? [],
+        year: englishYear ?? item.year,
+        genres: englishGenres && englishGenres.length > 0 ? englishGenres : genres?.trim().split(" ") ?? [],
         links: [{ name: `豆瓣评分：${item.rating?.value ?? "N/A"}`, category: "douban", url: item.url ?? "#" }],
       };
       if (imdbId) {

@@ -6,12 +6,18 @@ import { api } from "@/libs/api";
 import { getConfig } from "@/libs/config";
 import { ImageUrlGenerator } from "@/libs/images";
 import { matchResourceRoute } from "@/libs/router";
-import { isForwardUserAgent } from "@/libs/utils";
+import { getPreferredTitle, isForwardUserAgent } from "@/libs/utils";
 
 export const metaRoute = new Hono<Env>();
 
 export const idPrefixes = ["douban:"];
 const idPrefixRegex = new RegExp(`^(${idPrefixes.join("|")})`);
+
+const getYearFromDate = (value?: string | null) => {
+  if (!value) return undefined;
+  const match = value.match(/^\d{4}/);
+  return match ? match[0] : undefined;
+};
 
 metaRoute.get("*", async (c) => {
   const [matched, params] = matchResourceRoute(c.req.path);
@@ -39,7 +45,7 @@ metaRoute.get("*", async (c) => {
   const meta: MetaDetail & { [key: string]: any } = {
     id: metaId,
     type: data.type === "tv" ? "series" : "movie",
-    name: data.title,
+    name: getPreferredTitle(data.title, data.original_title),
     description: data.intro ?? undefined,
     genres: data.genres ?? undefined,
     links: [
@@ -65,6 +71,13 @@ metaRoute.get("*", async (c) => {
   }
 
   const { tmdbId, imdbId } = dbData || {};
+  const tmdbDetail = tmdbId
+    ? await api.tmdbAPI.getSubjectDetail(data.type, tmdbId, { language: "en-US" }).catch(() => null)
+    : null;
+  const englishTitle = tmdbDetail?.title?.trim() || tmdbDetail?.original_title?.trim();
+  const englishOverview = tmdbDetail?.overview?.trim();
+  const englishGenres = tmdbDetail?.genres?.map((genre) => genre.name).filter(Boolean);
+  const englishYear = getYearFromDate(tmdbDetail?.release_date);
 
   if (tmdbId) {
     if (isInForward) {
@@ -95,6 +108,18 @@ metaRoute.get("*", async (c) => {
   meta.poster = images.poster;
   meta.background = images.background;
   meta.logo = images.logo;
+  if (englishTitle) {
+    meta.name = englishTitle;
+  }
+  if (englishOverview) {
+    meta.description = englishOverview;
+  }
+  if (englishGenres && englishGenres.length > 0) {
+    meta.genres = englishGenres;
+  }
+  if (englishYear) {
+    meta.year = englishYear;
+  }
 
   return c.json({
     meta,

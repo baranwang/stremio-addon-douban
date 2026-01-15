@@ -3,6 +3,7 @@ import { z } from "zod/v4";
 import { type DoubanIdMapping, doubanMapping, doubanMappingSchema } from "@/db";
 import { BaseAPI } from "./base";
 import { DoubanAPI } from "./douban";
+import { TmdbAPI } from "./tmdb";
 import { TraktAPI } from "./trakt";
 
 interface FindIdParams {
@@ -18,6 +19,8 @@ class API extends BaseAPI {
   doubanAPI = new DoubanAPI();
 
   traktAPI = new TraktAPI();
+
+  tmdbAPI = new TmdbAPI();
 
   async fetchIdMapping(doubanIds: number[]) {
     const rows = await this.db.select().from(doubanMapping).where(inArray(doubanMapping.doubanId, doubanIds));
