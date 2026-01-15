@@ -1,6 +1,3 @@
--- Current sql file was generated after introspecting the database
--- If you want to run this migration please uncomment this code before executing migrations
-/*
 CREATE TABLE `douban_mapping` (
 	`douban_id` integer PRIMARY KEY NOT NULL,
 	`tmdb_id` integer,
@@ -32,8 +29,5 @@ CREATE TABLE `user_configs` (
 	`updated_at` integer,
 	`fanart_enabled` integer DEFAULT 0,
 	`fanart_api_key` text,
-	`image_providers` text DEFAULT '[{"provider":"douban","extra":{"proxy":"none"}}]',
-	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
+	`image_providers` text DEFAULT '[{"provider":"douban","extra":{"proxy":"none"}}]'
 );
-
-*/
