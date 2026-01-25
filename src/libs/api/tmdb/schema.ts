@@ -1,4 +1,6 @@
+import { sortBy } from "es-toolkit";
 import { z } from "zod/v4";
+import { TMDB_IMAGE_LANGUAGE } from "./constants";
 
 const tmdbImageSchema = z.string().transform((v) => (v ? `https://image.tmdb.org/t/p/original${v}` : null));
 
@@ -43,10 +45,26 @@ const tmdbImageDataSchema = z.object({
   file_path: tmdbImageSchema,
   vote_average: z.number(),
   vote_count: z.number(),
+  iso_639_1: z.string().nullish(),
+  iso_3166_1: z.string().nullish(),
 });
 
+const tmdbImageDataListSchema = z
+  .array(tmdbImageDataSchema)
+  .catch([])
+  .transform((arr) => {
+    return sortBy(arr, [
+      (item) => {
+        const index = TMDB_IMAGE_LANGUAGE.indexOf(item.iso_639_1 ?? "null");
+        return index === -1 ? Infinity : index;
+      },
+      (item) => -item.vote_average,
+      (item) => -item.vote_count,
+    ]);
+  });
+
 export const tmdbSubjectImagesSchema = z.object({
-  backdrops: z.array(tmdbImageDataSchema),
-  posters: z.array(tmdbImageDataSchema),
-  logos: z.array(tmdbImageDataSchema),
+  backdrops: tmdbImageDataListSchema,
+  posters: tmdbImageDataListSchema,
+  logos: tmdbImageDataListSchema,
 });

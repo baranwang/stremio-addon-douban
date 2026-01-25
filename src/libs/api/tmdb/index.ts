@@ -1,5 +1,6 @@
 import { SECONDS_PER_WEEK } from "@/libs/constants";
 import { BaseAPI, CacheType } from "../base";
+import { TMDB_IMAGE_LANGUAGE } from "./constants";
 import { tmdbFindResultSchema, tmdbSearchResultSchema, tmdbSubjectImagesSchema } from "./schema";
 
 export class TmdbAPI extends BaseAPI {
@@ -63,7 +64,7 @@ export class TmdbAPI extends BaseAPI {
     const resp = await this.request({
       url: `/${type}/${id}/images`,
       params: {
-        include_image_language: ["zh", "en", "ja", "ko", "null"].join(","),
+        include_image_language: TMDB_IMAGE_LANGUAGE.join(","),
       },
       cache: {
         key: `tmdb:${type}:${id}:images`,
