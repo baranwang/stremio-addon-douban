@@ -4,6 +4,8 @@ import type { DoubanSubjectCollectionItem } from "./api";
 import { FanartAPI } from "./api/fanart";
 import { TmdbAPI } from "./api/tmdb";
 import { TMDB_IMAGE_LANGUAGE } from "./api/tmdb/constants";
+import type { TmdbImageData } from "./api/tmdb/schema";
+
 import type { ImageProvider } from "./config";
 
 type DoubanInfo = Pick<DoubanSubjectCollectionItem, "cover" | "photos" | "type">;
@@ -125,38 +127,37 @@ export class ImageUrlGenerator {
       const images = await this.tmdbAPI.getSubjectImages(type, tmdbId, imageLanguages);
       if (!images) return null;
 
-      // 根据语言优先级排序图片
-      const sortImages = <T extends { iso_639_1?: string | null; vote_average?: number; vote_count?: number }>(
-        arr: T[],
-      ): T[] => {
-        return sortBy(arr, [
-          (item) => {
-            const lang = item.iso_639_1 ?? "null";
-            let index = imageLanguages.indexOf(lang);
-            if (index === -1) {
-              // 尝试前缀匹配（如 zh-CN 匹配 zh）
-              const prefix = lang.split("-")[0];
-              index = imageLanguages.findIndex((l) => l === prefix || l.startsWith(`${prefix}-`));
-            }
-            return index === -1 ? Infinity : index;
-          },
-          (item) => -(item.vote_average ?? 0),
-          (item) => -(item.vote_count ?? 0),
-        ]);
-      };
-
-      const sortedPosters = sortImages(images.posters);
-      const sortedBackdrops = sortImages(images.backdrops);
-      const sortedLogos = sortImages(images.logos);
-
       return {
-        poster: sortedPosters[0]?.file_path || undefined,
-        background: sortedBackdrops[0]?.file_path || undefined,
-        logo: sortedLogos[0]?.file_path || undefined,
+        poster: this.sortTmdbImages(images.posters, imageLanguages)?.[0]?.file_path || undefined,
+        background: this.sortTmdbImages(images.backdrops, imageLanguages)?.[0]?.file_path || undefined,
+        logo: this.sortTmdbImages(images.logos, imageLanguages)?.[0]?.file_path || undefined,
       };
     } catch (error) {
       console.error(error);
       return null;
     }
+  }
+
+  private sortTmdbImages(arr: TmdbImageData[], imageLanguages: string[]) {
+    return sortBy(arr, [
+      (item) => {
+        // 组合语言和国家代码：如 iso_639_1="zh", iso_3166_1="CN" => "zh-CN"
+        const langCode = item.iso_639_1 ?? "null";
+        const countryCode = item.iso_3166_1;
+        const fullLang = countryCode ? `${langCode}-${countryCode}` : langCode;
+
+        // 1. 首先尝试精确匹配完整语言标签（如 zh-CN）
+        let index = imageLanguages.indexOf(fullLang);
+        if (index !== -1) return index;
+
+        // 2. 尝试匹配纯语言代码（如 zh-TW 图片匹配 zh 规则）
+        index = imageLanguages.indexOf(langCode);
+        if (index !== -1) return index;
+
+        return Infinity;
+      },
+      (item) => -(item.vote_average ?? 0),
+      (item) => -(item.vote_count ?? 0),
+    ]);
   }
 }

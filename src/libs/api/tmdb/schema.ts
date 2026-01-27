@@ -47,6 +47,8 @@ const tmdbImageDataSchema = z.object({
   iso_3166_1: z.string().nullish(),
 });
 
+export type TmdbImageData = z.output<typeof tmdbImageDataSchema>;
+
 const tmdbImageDataListSchema = z.array(tmdbImageDataSchema).catch([]);
 
 export const tmdbSubjectImagesSchema = z.object({
