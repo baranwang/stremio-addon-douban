@@ -38,10 +38,10 @@ Stremio 豆瓣插件 - 一个为 Stremio 提供豆瓣内容的 Cloudflare Worker
 
 ```typescript
 // ❌ 不要使用外键
-userId: text("user_id").references(() => users.id, { onDelete: "cascade" })
+userId: text("user_id").references(() => users.id, { onDelete: "cascade" });
 
 // ✅ 正确做法
-userId: text("user_id").primaryKey()
+userId: text("user_id").primaryKey();
 ```
 
 ## UI 组件规范
@@ -49,6 +49,7 @@ userId: text("user_id").primaryKey()
 - 优先使用 `src/components/ui/` 中的 shadcn/ui 组件
 - 新组件应遵循 shadcn/ui 的设计模式
 - 使用 `cn()` 工具函数合并 class names
+- **每个文件只包含一个组件**，子组件应拆分到同目录下的独立文件中
 
 ## 目录结构
 

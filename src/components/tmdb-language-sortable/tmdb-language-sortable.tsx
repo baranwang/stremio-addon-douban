@@ -7,69 +7,19 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, X } from "lucide-react";
+import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { Plus } from "lucide-react";
 import { type FC, useMemo, useState } from "react";
-import { Item, ItemActions, ItemContent, ItemTitle } from "@/components/ui/item";
+import { Item, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { NativeSelect, NativeSelectOptGroup, NativeSelectOption } from "@/components/ui/native-select";
-import { getAllLanguages, getCountriesForLanguage, getLanguageDisplayName } from "./language-utils";
+import { Badge } from "../ui/badge";
+import { getAllLanguages, getCountriesForLanguage } from "./language-utils";
+import { SortableLanguageItem } from "./sortable-language-item";
 
 interface TmdbLanguageSortableProps {
   value: string[];
   onChange: (languages: string[]) => void;
 }
-
-interface SortableLanguageItemProps {
-  code: string;
-  onRemove: () => void;
-  canRemove: boolean;
-}
-
-const SortableLanguageItem: FC<SortableLanguageItemProps> = ({ code, onRemove, canRemove }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: code,
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
-    <div ref={setNodeRef} style={style}>
-      <Item size="sm">
-        <button
-          type="button"
-          className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="size-4" />
-        </button>
-        <ItemContent>
-          <ItemTitle>
-            <span className="font-mono text-muted-foreground text-xs">{code}</span>
-            <span>{getLanguageDisplayName(code)}</span>
-          </ItemTitle>
-        </ItemContent>
-        <ItemActions>
-          {canRemove && (
-            <button
-              type="button"
-              onClick={onRemove}
-              className="p-1 text-muted-foreground hover:text-destructive"
-              aria-label="移除语言"
-            >
-              <X className="size-4" />
-            </button>
-          )}
-        </ItemActions>
-      </Item>
-    </div>
-  );
-};
 
 export const TmdbLanguageSortable: FC<TmdbLanguageSortableProps> = ({ value, onChange }) => {
   const [selectedLang, setSelectedLang] = useState("");
@@ -112,7 +62,12 @@ export const TmdbLanguageSortable: FC<TmdbLanguageSortableProps> = ({ value, onC
 
   const handleAdd = () => {
     if (codeToAdd && !alreadyExists) {
-      onChange([...value, codeToAdd]);
+      let newValue = [...value, codeToAdd];
+      // 如果列表中有 null，将其移到最后
+      if (newValue.includes("null") && codeToAdd !== "null") {
+        newValue = [...newValue.filter((c) => c !== "null"), "null"];
+      }
+      onChange(newValue);
       setSelectedLang("");
       setSelectedCountry("");
     }
@@ -135,7 +90,7 @@ export const TmdbLanguageSortable: FC<TmdbLanguageSortableProps> = ({ value, onC
       <ItemContent className="flex-1">
         <ItemTitle className="mb-2">图片语言偏好</ItemTitle>
 
-        <div className="rounded-md border bg-muted/30">
+        <div className="rounded-md border bg-muted/30" data-vaul-no-drag>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={value} strategy={verticalListSortingStrategy}>
               {value.map((code) => (
@@ -207,14 +162,14 @@ export const TmdbLanguageSortable: FC<TmdbLanguageSortableProps> = ({ value, onC
 
           {/* 预览要添加的代码 */}
           {codeToAdd && (
-            <p className="text-muted-foreground text-xs">
-              将添加: <code className="rounded bg-muted px-1">{codeToAdd}</code>
-              {alreadyExists && <span className="ml-2 text-destructive">（已存在）</span>}
-            </p>
+            <ItemDescription>
+              将添加: <Badge variant="secondary">{codeToAdd}</Badge>
+              {alreadyExists && <Badge variant="destructive">已存在</Badge>}
+            </ItemDescription>
           )}
         </div>
 
-        <p className="mt-2 text-muted-foreground text-xs">拖动排序调整优先级，排在前面的语言将优先使用</p>
+        <ItemDescription>拖动排序调整优先级，排在前面的语言将优先使用</ItemDescription>
       </ItemContent>
     </Item>
   );
