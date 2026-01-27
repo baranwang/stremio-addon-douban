@@ -55,14 +55,11 @@ export const ImageProviderSortable: FC<ImageProviderSortableProps> = ({ value, o
     }
   };
 
-  const handleToggle = (providerId: string, enabled: boolean) => {
+  const handleToggle = (providerId: string, enabled: boolean, defaultExtra?: ImageProvider["extra"]) => {
     if (enabled) {
       // 添加到末尾
-      const config = PROVIDER_CONFIGS.find((c) => c.id === providerId);
-      if (config) {
-        // handleToggle 只在客户端触发，可以安全调用函数
-        const extra = typeof config.defaultExtra === "function" ? config.defaultExtra() : config.defaultExtra;
-        onChange([...value, { provider: providerId, extra } as ImageProvider]);
+      if (defaultExtra !== undefined) {
+        onChange([...value, { provider: providerId, extra: defaultExtra } as ImageProvider]);
       }
     } else {
       // 防止关闭最后一个提供商
@@ -107,7 +104,7 @@ export const ImageProviderSortable: FC<ImageProviderSortableProps> = ({ value, o
               provider={mergedProvider as ImageProvider}
               config={config}
               isEnabled={isEnabled}
-              onToggle={(enabled) => handleToggle(config.id, enabled)}
+              onToggle={(enabled) => handleToggle(config.id, enabled, defaultExtra)}
               onExtraChange={(extra) => handleExtraChange(config.id, extra)}
               disabled={disabled}
               showSeparator={index < sortedConfigs.length - 1}
