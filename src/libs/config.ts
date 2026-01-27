@@ -23,6 +23,7 @@ const imageProviderTmdbSchema = z.object({
   provider: z.literal("tmdb"),
   extra: z.object({
     apiKey: z.string().optional(),
+    imageLanguages: z.array(z.string()).optional(),
   }),
 });
 
