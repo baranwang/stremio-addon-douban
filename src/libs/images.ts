@@ -1,5 +1,5 @@
 import { sortBy } from "es-toolkit";
-import { Liquid } from "liquidjs";
+
 import type { DoubanSubjectCollectionItem } from "./api";
 import { FanartAPI } from "./api/fanart";
 import { TmdbAPI } from "./api/tmdb";
@@ -30,7 +30,6 @@ interface ConstructorOptions {
 export class ImageUrlGenerator {
   private fanartAPI?: FanartAPI;
   private tmdbAPI?: TmdbAPI;
-  private liquid = new Liquid();
 
   constructor(
     private providers: ImageProvider[],
@@ -58,7 +57,7 @@ export class ImageUrlGenerator {
 
     switch (provider.provider) {
       case "douban":
-        return this.getDoubanUrls(doubanInfo, provider.extra);
+        return this.getDoubanUrls(doubanInfo);
 
       case "fanart": {
         const id = tmdbId?.toString() ?? imdbId;
@@ -83,25 +82,24 @@ export class ImageUrlGenerator {
   }
 
   // Douban
-  private getDoubanUrls(info: DoubanInfo, extra: ImageProvider<"douban">["extra"]): ImageUrls {
+  private getDoubanUrls(info: DoubanInfo): ImageUrls {
     return {
-      poster: this.applyProxy(info.cover, extra.proxyTemplate),
-      background: this.applyProxy(info.photos?.[0], extra.proxyTemplate),
+      poster: this.applyProxy(info.cover),
+      background: this.applyProxy(info.photos?.[0]),
       logo: undefined,
     };
   }
 
-  private applyProxy(
-    url: string | null | undefined,
-    proxyTemplate: ImageProvider<"douban">["extra"]["proxyTemplate"],
-  ): string | undefined {
+  private applyProxy(url: string | null | undefined): string | undefined {
     if (!url) return undefined;
-    if (proxyTemplate) {
-      return this.liquid.parseAndRenderSync(proxyTemplate, {
-        url,
-        userId: this.options.userId,
-      });
+
+    // 如果有 userId（说明是已配置用户），则使用代理
+    // 具体的鉴权（是否 Star）由 /image-proxy 接口处理
+    if (this.options.userId && this.options.userId.length > 0) {
+      const encodedUrl = encodeURIComponent(url);
+      return `${this.options.origin}/image-proxy/${this.options.userId}?url=${encodedUrl}`;
     }
+
     return url;
   }
 

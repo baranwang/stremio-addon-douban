@@ -1,6 +1,5 @@
-import { forwardRef, use, useState } from "react";
+import { forwardRef, useState } from "react";
 import { TMDB_IMAGE_LANGUAGE } from "@/libs/api/tmdb/constants";
-import { ConfigureContext } from "../configure/context";
 import { TmdbLanguageSortable } from "../tmdb-language-sortable";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "../ui/input-group";
 import { Item, ItemContent, ItemDescription, ItemTitle } from "../ui/item";
@@ -19,51 +18,11 @@ const InputGroupPassword = forwardRef<HTMLInputElement, React.ComponentProps<typ
   );
 });
 
-const getDefaultProxyTemplate = () => {
-  const { isStarredUser } = use(ConfigureContext);
-  return isStarredUser ? `${window.location.origin}/image-proxy/{{userId}}?url={{url | url_encode}}` : "";
-};
-
 /** 豆瓣配置 */
 export const doubanConfig: ProviderConfigDef<"douban"> = {
   id: "douban",
   name: "豆瓣",
-  defaultExtra: () => ({
-    proxyTemplate: getDefaultProxyTemplate(),
-  }),
-  renderConfig: ({ extra, onChange }) => {
-    const defaultTemplate = typeof window !== "undefined" ? getDefaultProxyTemplate() : "";
-    const hasChanged = extra.proxyTemplate !== defaultTemplate;
-    return (
-      <Item size="sm">
-        <ItemContent className="flex-1">
-          <ItemTitle>图片代理模板</ItemTitle>
-          <InputGroup className="mt-2">
-            <InputGroupInput
-              placeholder="例如：https://proxy.example.com?url={{url | url_encode}}"
-              value={extra.proxyTemplate}
-              onChange={(e) => onChange({ ...extra, proxyTemplate: e.target.value || undefined })}
-            />
-            {hasChanged && (
-              <InputGroupAddon align="inline-end">
-                <InputGroupButton onClick={() => onChange({ ...extra, proxyTemplate: defaultTemplate })}>
-                  恢复默认
-                </InputGroupButton>
-              </InputGroupAddon>
-            )}
-          </InputGroup>
-          <ItemDescription>
-            使用{" "}
-            <a href="https://liquidjs.com/zh-cn/" target="_blank" rel="noreferrer">
-              Liquid
-            </a>{" "}
-            模板语法。可用变量：<code>{"{{url}}"}</code>、<code>{"{{userId}}"}</code>。 支持过滤器如{" "}
-            <code>{"{{url | url_encode}}"}</code>。留空则不使用代理。
-          </ItemDescription>
-        </ItemContent>
-      </Item>
-    );
-  },
+  defaultExtra: {},
 };
 
 /** Fanart 配置 */

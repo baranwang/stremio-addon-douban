@@ -7,9 +7,7 @@ import { DEFAULT_COLLECTION_IDS } from "./collections";
 
 const imageProviderDoubanSchema = z.object({
   provider: z.literal("douban"),
-  extra: z.object({
-    proxyTemplate: z.string().optional(),
-  }),
+  extra: z.object({}),
 });
 
 const imageProviderFanartSchema = z.object({
